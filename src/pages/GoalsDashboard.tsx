@@ -7,6 +7,7 @@ import {
 } from "../db/goalHooks";
 import { GoalCard } from "../components/goals/GoalCard";
 import { Button } from "../components/ui/button";
+import { GoalDetail } from "./GoalDetail";
 
 export default function GoalsDashboard() {
   const { data: activeGoals, isLoading: activeLoading } = useGoalsWithStats();
@@ -37,21 +38,7 @@ export default function GoalsDashboard() {
   const focusHoursThisWeek = ((globalStats?.focus_seconds_this_week || 0) / 3600).toFixed(1);
 
   if (selectedGoalId) {
-    // This is a placeholder for Phase 3: Detail View
-    return (
-      <div className="p-8 max-w-5xl mx-auto space-y-8">
-        <button 
-          onClick={() => setSelectedGoalId(null)}
-          className="text-muted hover:text-white transition-colors flex items-center gap-2 mb-4"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          Back to Goals
-        </button>
-        <h1 className="text-4xl font-bold">Goal Detail</h1>
-        <p className="text-muted italic">Goal Detail View is coming in Phase 3.</p>
-        <p className="text-xs font-mono text-muted/50">ID: {selectedGoalId}</p>
-      </div>
-    );
+    return <GoalDetail goalId={selectedGoalId} onBack={() => setSelectedGoalId(null)} />;
   }
 
   return (
