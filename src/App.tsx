@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initDb } from "./db";
+import { useEnforcer } from "./hooks/useEnforcer";
 import CommandCenter from "./pages/CommandCenter";
 import GoalsDashboard from "./pages/GoalsDashboard";
 import Whirlwind from "./pages/Whirlwind";
@@ -10,6 +11,7 @@ const queryClient = new QueryClient();
 type Page = "command-center" | "goals" | "whirlwind";
 
 function AppShell() {
+  useEnforcer();
   const [page, setPage] = useState<Page>("command-center");
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
