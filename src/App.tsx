@@ -6,10 +6,11 @@ import { ReflectionModal } from "./components/timer/ReflectionModal";
 import CommandCenter from "./pages/CommandCenter";
 import GoalsDashboard from "./pages/GoalsDashboard";
 import Whirlwind from "./pages/Whirlwind";
+import Stats from "./pages/Stats";
 
 const queryClient = new QueryClient();
 
-type Page = "command-center" | "goals" | "whirlwind";
+type Page = "command-center" | "goals" | "whirlwind" | "stats";
 
 function AppShell() {
   useEnforcer();
@@ -56,11 +57,17 @@ function AppShell() {
           onClick={() => setPage("whirlwind")}
           label="Whirlwind"
         />
+        <NavButton 
+          active={page === "stats"} 
+          onClick={() => setPage("stats")}
+          label="Player Stats"
+        />
       </nav>
       <main className="flex-1 overflow-auto bg-[#000000]">
         {page === "command-center" && <CommandCenter />}
         {page === "goals" && <GoalsDashboard />}
         {page === "whirlwind" && <Whirlwind />}
+        {page === "stats" && <Stats />}
       </main>
       <ReflectionModal />
     </div>
