@@ -1,4 +1,3 @@
-import React from "react";
 
 export const HeatmapStrip = () => {
   // 74 cells for the heatmap

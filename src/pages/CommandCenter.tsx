@@ -1,4 +1,3 @@
-import React from "react";
 import { TimerDisplay } from "../components/timer/TimerDisplay";
 import { FloodBar } from "../components/timer/FloodBar";
 import { CalendarNextUp } from "../components/cc/CalendarNextUp";

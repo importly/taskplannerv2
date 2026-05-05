@@ -1,13 +1,12 @@
-import React from "react";
 import { useTimerStore } from "../../stores/timerStore";
 
+const TARGET_SECONDS = 1500; // 25 mins
+
 export const FloodBar = () => {
-  const { status, focusElapsedSeconds, sessionGoalSeconds } = useTimerStore();
+  const { status, focusElapsedSeconds } = useTimerStore();
 
   // Calculate progress percentage
-  // For now, let's assume a default goal if sessionGoalSeconds is not available
-  const goal = sessionGoalSeconds || 3600; // 1 hour default
-  const progress = Math.min((focusElapsedSeconds / goal) * 100, 100);
+  const progress = Math.min((focusElapsedSeconds / TARGET_SECONDS) * 100, 100);
 
   const getStatusColor = () => {
     switch (status) {
