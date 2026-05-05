@@ -76,25 +76,24 @@ export function useStreak() {
       if (dailyMinutes.length === 0) return 0;
       
       // 3. Compute current streak
-      const today = new Date().toLocaleDateString('en-CA');
+      const now = new Date();
+      const today = now.toLocaleDateString('en-CA');
       const yesterdayDate = new Date();
       yesterdayDate.setDate(yesterdayDate.getDate() - 1);
       const yesterday = yesterdayDate.toLocaleDateString('en-CA');
       
       const minutesMap = new Map(dailyMinutes.map(m => [m.day, m.mins]));
       
-      let checkDateStr = "";
+      let current: Date;
       if ((minutesMap.get(today) || 0) >= threshold) {
-        checkDateStr = today;
+        current = now;
       } else if ((minutesMap.get(yesterday) || 0) >= threshold) {
-        checkDateStr = yesterday;
+        current = yesterdayDate;
       } else {
         return 0;
       }
       
       let streak = 0;
-      let current = new Date(checkDateStr);
-      
       while (true) {
         const dateStr = current.toLocaleDateString('en-CA');
         const mins = minutesMap.get(dateStr) || 0;
