@@ -174,6 +174,21 @@ export function useNarrativeLogs(goalId: string) {
   });
 }
 
+export function useGoalTasks(goalId: string) {
+  return useQuery({
+    queryKey: [...goalKeys.detail(goalId), "tasks"],
+    queryFn: async () => {
+      const db = getDb();
+      return await db
+        .selectFrom("cached_tasks")
+        .selectAll()
+        .where("linked_goal_id", "=", goalId)
+        .execute();
+    },
+    enabled: !!goalId,
+  });
+}
+
 // Mutation Hooks
 
 export function useCreateGoal() {
