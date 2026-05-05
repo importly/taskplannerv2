@@ -1,6 +1,7 @@
-import { X, Settings } from "lucide-react";
+import { X, Settings, Calendar } from "lucide-react";
 import { TagManager } from "./TagManager";
 import { Button } from "../ui/button";
+import { useGoogleCalendarAuth } from "../../db/calendarHooks";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
+  const { isConnected, disconnect } = useGoogleCalendarAuth();
   if (!isOpen) return null;
 
   return (
@@ -31,7 +33,30 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-12">
+           <section>
+             <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-muted mb-6 flex items-center gap-2">
+               <Calendar size={14} />
+               Google Calendar
+             </h3>
+             <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-white/10'}`} />
+                 <span className="text-sm font-medium text-white/80">
+                   {isConnected ? 'Connected to Google' : 'Not connected'}
+                 </span>
+               </div>
+               {isConnected && (
+                 <button 
+                   onClick={() => disconnect()}
+                   className="text-[10px] font-black uppercase tracking-widest text-danger hover:text-danger/80 transition-colors"
+                 >
+                   Disconnect Account
+                 </button>
+               )}
+             </div>
+           </section>
+
            <TagManager />
         </div>
 
