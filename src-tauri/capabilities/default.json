@@ -8,6 +8,8 @@
     "opener:default",
     "sql:allow-execute",
     "sql:allow-select",
-    "sql:allow-load"
+    "sql:allow-load",
+    "shell:allow-open",
+    "deep-link:default"
   ]
 }

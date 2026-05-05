@@ -19,8 +19,16 @@
         "transparent": true
       }
     ],
+    "deepLinkProtocols": [
+      {
+        "schemes": [
+          "accountability"
+        ],
+        "role": "Viewer"
+      }
+    ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://login.microsoftonline.com https://graph.microsoft.com"
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://login.microsoftonline.com https://graph.microsoft.com https://accounts.google.com https://oauth2.googleapis.com"
     }
   },
   "bundle": {
