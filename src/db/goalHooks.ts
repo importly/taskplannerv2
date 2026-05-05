@@ -35,17 +35,85 @@ export function useGoals() {
   });
 }
 
-export function useArchivedGoals() {
+export function useGoalsWithStats() {
   return useQuery({
-    queryKey: goalKeys.list(true),
+    queryKey: [...goalKeys.lists(), "with-stats", false],
     queryFn: async () => {
       const db = getDb();
-      return await db
+      const goals = await db
+        .selectFrom("goals")
+        .selectAll()
+        .where("archived_at", "is", null)
+        .orderBy("created_at", "desc")
+        .execute();
+
+      const stats = await db
+        .selectFrom("focus_sessions")
+        .select([
+          "linked_goal_id",
+          sql<number>`SUM(focus_duration_seconds)`.as("total_seconds"),
+        ])
+        .where("linked_goal_id", "is not", null)
+        .groupBy("linked_goal_id")
+        .execute();
+
+      const statsMap = new Map(stats.map(s => [s.linked_goal_id, s.total_seconds]));
+
+      return goals.map(goal => ({
+        ...goal,
+        total_focus_seconds: statsMap.get(goal.id) || 0,
+      }));
+    },
+  });
+}
+
+export function useArchivedGoalsWithStats() {
+  return useQuery({
+    queryKey: [...goalKeys.lists(), "with-stats", true],
+    queryFn: async () => {
+      const db = getDb();
+      const goals = await db
         .selectFrom("goals")
         .selectAll()
         .where("archived_at", "is not", null)
         .orderBy("archived_at", "desc")
         .execute();
+
+      const stats = await db
+        .selectFrom("focus_sessions")
+        .select([
+          "linked_goal_id",
+          sql<number>`SUM(focus_duration_seconds)`.as("total_seconds"),
+        ])
+        .where("linked_goal_id", "is not", null)
+        .groupBy("linked_goal_id")
+        .execute();
+
+      const statsMap = new Map(stats.map(s => [s.linked_goal_id, s.total_seconds]));
+
+      return goals.map(goal => ({
+        ...goal,
+        total_focus_seconds: statsMap.get(goal.id) || 0,
+      }));
+    },
+  });
+}
+
+export function useGlobalStats() {
+  return useQuery({
+    queryKey: [...goalKeys.all, "global-stats"],
+    queryFn: async () => {
+      const db = getDb();
+      // Total focus time this week (Monday to now)
+      const weekStats = await db
+        .selectFrom("focus_sessions")
+        .select(sql<number>`SUM(focus_duration_seconds)`.as("total_seconds"))
+        .where("start_time", ">=", sql<string>`date('now', 'weekday 0', '-6 days')`) // Start of current week (Monday)
+        .executeTakeFirst();
+
+      return {
+        focus_seconds_this_week: weekStats?.total_seconds || 0,
+      };
     },
   });
 }
