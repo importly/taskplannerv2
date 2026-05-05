@@ -19,14 +19,14 @@ class TauriSqliteConnection implements DatabaseConnection {
     const params = parameters as unknown[];
 
     if (/^\s*(select|pragma)/i.test(sql)) {
-      const rows = await this.db.select<O>(sql, params);
-      return { rows };
+      const rows = await this.db.select<any[]>(sql, params);
+      return { rows: rows as O[] };
     }
 
     const result = await this.db.execute(sql, params);
     return {
       rows: [],
-      insertId: BigInt(result.lastInsertId),
+      insertId: result.lastInsertId !== undefined ? BigInt(result.lastInsertId) : undefined,
       numAffectedRows: BigInt(result.rowsAffected),
     };
   }
