@@ -96,3 +96,82 @@ export async function saveFocusSession() {
     }
   });
 }
+
+/**
+ * Creates a new goal.
+ */
+export async function createGoal(title: string, description: string | null) {
+  const db = getDb();
+  return await db
+    .insertInto("goals")
+    .values({
+      id: crypto.randomUUID(),
+      title,
+      description,
+      progress_percent: 0,
+    })
+    .executeTakeFirst();
+}
+
+/**
+ * Updates an existing goal's title and description.
+ */
+export async function updateGoal(id: string, title: string, description: string | null) {
+  const db = getDb();
+  return await db
+    .updateTable("goals")
+    .set({ title, description })
+    .where("id", "=", id)
+    .executeTakeFirst();
+}
+
+/**
+ * Archives a goal by setting its archived_at timestamp.
+ */
+export async function archiveGoal(id: string) {
+  const db = getDb();
+  return await db
+    .updateTable("goals")
+    .set({ archived_at: new Date().toISOString() })
+    .where("id", "=", id)
+    .executeTakeFirst();
+}
+
+/**
+ * Deletes a goal. Narrative logs and other relations are handled by ON DELETE CASCADE.
+ */
+export async function deleteGoal(id: string) {
+  const db = getDb();
+  return await db
+    .deleteFrom("goals")
+    .where("id", "=", id)
+    .executeTakeFirst();
+}
+
+/**
+ * Updates the progress percentage of a goal.
+ */
+export async function updateGoalProgress(id: string, progressPercent: number) {
+  const db = getDb();
+  return await db
+    .updateTable("goals")
+    .set({ progress_percent: progressPercent })
+    .where("id", "=", id)
+    .executeTakeFirst();
+}
+
+/**
+ * Adds a manual narrative log entry to a goal.
+ */
+export async function addManualNarrativeLog(goalId: string, content: string) {
+  const db = getDb();
+  return await db
+    .insertInto("narrative_logs")
+    .values({
+      id: crypto.randomUUID(),
+      goal_id: goalId,
+      content: content.trim(),
+      session_id: null,
+    })
+    .executeTakeFirst();
+}

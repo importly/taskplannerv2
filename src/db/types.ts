@@ -11,6 +11,7 @@ export interface GoalsTable {
   description: string | null;
   progress_percent: Generated<number>;
   created_at: Generated<string>;
+  archived_at: string | null;
 }
 
 export interface CachedTasksTable {
