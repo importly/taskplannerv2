@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getDb } from "./index";
 import { sql } from "kysely";
 
@@ -8,7 +8,64 @@ export const gamificationKeys = {
   dailyFocus: (days: number) => [...gamificationKeys.all, "daily-focus", days] as const,
   streak: () => [...gamificationKeys.all, "streak"] as const,
   globalStats: () => [...gamificationKeys.all, "global-stats"] as const,
+  tags: () => [...gamificationKeys.all, "tags"] as const,
 };
+
+export function useAllTags() {
+  return useQuery({
+    queryKey: gamificationKeys.tags(),
+    queryFn: async () => {
+      const db = getDb();
+      return await db.selectFrom("tags").selectAll().execute();
+    },
+  });
+}
+
+export function useCreateTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (tag: { id: string; rpg_attribute: string; color_hex: string }) => {
+      const db = getDb();
+      await db.insertInto("tags").values(tag).execute();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gamificationKeys.tags() });
+    },
+  });
+}
+
+export function useUpdateTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (tag: { id: string; rpg_attribute: string; color_hex: string }) => {
+      const db = getDb();
+      await db
+        .updateTable("tags")
+        .set({
+          rpg_attribute: tag.rpg_attribute,
+          color_hex: tag.color_hex,
+        })
+        .where("id", "=", tag.id)
+        .execute();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gamificationKeys.tags() });
+    },
+  });
+}
+
+export function useDeleteTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const db = getDb();
+      await db.deleteFrom("tags").where("id", "=", id).execute();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gamificationKeys.tags() });
+    },
+  });
+}
 
 export function useXpByAttribute() {
   return useQuery({

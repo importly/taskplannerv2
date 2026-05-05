@@ -6,7 +6,6 @@ import {
   useCachedTasks, 
   useSyncTasks, 
   useCompleteTask, 
-  useUpdateTask, 
   useCreateTask, 
   useLinkTaskToGoal 
 } from "../db/taskHooks";
@@ -14,7 +13,6 @@ import { useGoals } from "../db/goalHooks";
 import { GoalPicker } from "../components/whirlwind/GoalPicker";
 import { Button } from "../components/ui/button";
 import { RefreshCcw, Plus, Target, Calendar, CheckCircle2, Circle, Loader2 } from "lucide-react";
-import type { TodoTaskList } from "microsoft-graph";
 
 export default function Whirlwind() {
   const [account, setAccount] = useState<any>(null);
@@ -110,31 +108,43 @@ export default function Whirlwind() {
 
       {/* Task Lists */}
       <div className="space-y-12">
-        {lists.map(list => {
-          const tasks = groupedTasks[list.id!] || [];
-          return (
-            <section key={list.id} className="space-y-4">
-              <h2 className="text-sm font-black text-muted uppercase tracking-[0.3em] flex items-center gap-3">
-                {list.displayName}
-                <span className="h-px flex-1 bg-white/5" />
-                <span className="font-mono text-[10px] opacity-40">{tasks.length} tasks</span>
-              </h2>
+        {(isLoadingLists || isLoadingTasks) && lists.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <Loader2 className="w-8 h-8 animate-spin text-accent/50" />
+            <p className="text-muted font-mono text-[10px] uppercase tracking-widest">Loading Tasks...</p>
+          </div>
+        ) : lists.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4 opacity-50">
+            <Calendar className="w-8 h-8 text-muted/20" />
+            <p className="text-muted font-mono text-[10px] uppercase tracking-widest">No tasks found</p>
+          </div>
+        ) : (
+          lists.map(list => {
+            const tasks = groupedTasks[list.id!] || [];
+            return (
+              <section key={list.id} className="space-y-4">
+                <h2 className="text-sm font-black text-muted uppercase tracking-[0.3em] flex items-center gap-3">
+                  {list.displayName}
+                  <span className="h-px flex-1 bg-white/5" />
+                  <span className="font-mono text-[10px] opacity-40">{tasks.length} tasks</span>
+                </h2>
 
-              <div className="grid gap-2">
-                {tasks.map(task => (
-                  <TaskRow 
-                    key={task.ms_task_id} 
-                    task={task} 
-                    goals={goals}
-                    onComplete={() => complete({ taskId: task.ms_task_id, listId: list.id! })}
-                    onLink={() => setIsLinkingTaskId(task.ms_task_id)}
-                  />
-                ))}
-                <InlineAdd listId={list.id!} onAdd={(title) => createTask({ listId: list.id!, title })} />
-              </div>
-            </section>
-          );
-        })}
+                <div className="grid gap-2">
+                  {tasks.map(task => (
+                    <TaskRow 
+                      key={task.ms_task_id} 
+                      task={task} 
+                      goals={goals}
+                      onComplete={() => complete({ taskId: task.ms_task_id, listId: list.id! })}
+                      onLink={() => setIsLinkingTaskId(task.ms_task_id)}
+                    />
+                  ))}
+                  <InlineAdd onAdd={(title) => createTask({ listId: list.id!, title })} />
+                </div>
+              </section>
+            );
+          })
+        )}
       </div>
 
       <GoalPicker 
@@ -195,7 +205,7 @@ function TaskRow({ task, goals, onComplete, onLink }: { task: any, goals: any[],
   );
 }
 
-function InlineAdd({ listId, onAdd }: { listId: string, onAdd: (title: string) => void }) {
+function InlineAdd({ onAdd }: { onAdd: (title: string) => void }) {
   const [title, setTitle] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {

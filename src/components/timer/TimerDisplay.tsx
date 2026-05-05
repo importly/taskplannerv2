@@ -7,7 +7,6 @@ export const TimerDisplay = () => {
   const {
     status,
     startTime,
-    pausedAt,
     focusElapsedSeconds,
     penaltyCountdown,
     penalized,
@@ -56,92 +55,92 @@ export const TimerDisplay = () => {
     return parts.join(":");
   };
 
-  const getStatusColor = () => {
-    if (penalized || penaltyCountdown !== null) return "var(--color-danger)";
-    if (status === "ACTIVE") return "var(--color-accent)";
-    return "var(--color-muted)";
+  const getStatusLabel = () => {
+    if (penalized) return "PENALIZED";
+    if (penaltyCountdown !== null) return "FOCUS LOST";
+    if (status === "ACTIVE") return "FOCUSING";
+    if (status === "PAUSED") return "PAUSED";
+    return "READY";
+  };
+
+  const getStatusColorClass = () => {
+    if (penalized || penaltyCountdown !== null) return "text-danger";
+    if (status === "ACTIVE") return "text-accent";
+    if (status === "PAUSED") return "text-muted";
+    return "text-muted";
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 gap-8">
-      <div className="flex flex-col items-center">
-        <div
-          className="text-8xl font-mono tracking-tighter"
-          style={{ color: getStatusColor() }}
-        >
-          {formatTime(displaySeconds)}
-        </div>
-        
-        {penaltyCountdown !== null && (
-          <div className="flex items-center gap-2 text-danger animate-pulse mt-4">
-            <AlertCircle size={20} />
-            <span className="font-mono text-xl">FOCUS LOST: {penaltyCountdown}s</span>
-          </div>
-        )}
+    <div className="flex flex-col items-center justify-center gap-4">
+      {/* State Label */}
+      <div className={`text-xs font-black tracking-[0.3em] uppercase ${getStatusColorClass()}`}>
+        {getStatusLabel()}
+      </div>
 
-        {penalized && (
-          <div className="flex items-center gap-2 text-danger mt-4">
-            <AlertCircle size={20} />
-            <span className="font-bold">SESSION PENALIZED</span>
+      {/* Giant Digits */}
+      <div
+        className={`text-[5rem] sm:text-[8rem] lg:text-[12rem] font-mono font-bold leading-none tracking-tighter transition-all duration-500 ${getStatusColorClass()}`}
+        style={{ mixBlendMode: "difference" }}
+      >
+        {formatTime(displaySeconds)}
+      </div>
+      
+      {/* Penalty Info */}
+      <div className="h-8">
+        {penaltyCountdown !== null && (
+          <div className="flex items-center gap-2 text-danger animate-pulse">
+            <AlertCircle size={16} />
+            <span className="font-mono text-sm uppercase tracking-wider">Penalty in {penaltyCountdown}s</span>
           </div>
         )}
       </div>
 
-      <div className="flex items-center gap-4">
+      {/* Controls */}
+      <div className="flex items-center gap-6 mt-8">
         {status === "IDLE" && (
           <Button
             onClick={start}
-            className="bg-accent text-black hover:bg-accent/90 px-8 py-6 text-lg font-bold"
+            className="bg-accent text-black hover:bg-accent/90 px-6 sm:px-10 py-6 sm:py-8 text-lg sm:text-xl font-black rounded-none transition-transform hover:scale-105"
           >
-            <Play className="mr-2" fill="currentColor" /> START FOCUS
+            <Play size={24} fill="currentColor" className="mr-2" /> START
           </Button>
-        )}
-
-        {status === "ACTIVE" && (
-          <>
-            <Button
-              onClick={pause}
-              variant="outline"
-              className="border-muted text-muted hover:text-white px-6 py-6"
-            >
-              <Pause />
-            </Button>
-            <Button
-              onClick={stop}
-              variant="destructive"
-              className="bg-danger hover:bg-danger/90 px-6 py-6"
-            >
-              <Square fill="currentColor" />
-            </Button>
-          </>
-        )}
-
-        {status === "PAUSED" && (
-          <>
-            <Button
-              onClick={resume}
-              className="bg-accent text-black hover:bg-accent/90 px-8 py-6 text-lg font-bold"
-            >
-              <Play className="mr-2" fill="currentColor" /> RESUME
-            </Button>
-            <Button
-              onClick={stop}
-              variant="destructive"
-              className="bg-danger hover:bg-danger/90 px-6 py-6"
-            >
-              <Square fill="currentColor" />
-            </Button>
-          </>
         )}
 
         {(status === "ACTIVE" || status === "PAUSED") && (
-          <Button
-            onClick={discard}
-            variant="ghost"
-            className="text-muted hover:text-danger px-4 py-6"
-          >
-            <Trash2 size={20} />
-          </Button>
+          <div className="flex items-center gap-2 sm:gap-4">
+            {status === "ACTIVE" ? (
+              <Button
+                onClick={pause}
+                variant="outline"
+                className="border-white/10 text-white hover:bg-white/5 px-6 sm:px-8 py-6 sm:py-8 rounded-none"
+              >
+                <Pause size={24} fill="currentColor" />
+              </Button>
+            ) : (
+              <Button
+                onClick={resume}
+                className="bg-accent text-black hover:bg-accent/90 px-6 sm:px-8 py-6 sm:py-8 rounded-none"
+              >
+                <Play size={24} fill="currentColor" />
+              </Button>
+            )}
+            
+            <Button
+              onClick={stop}
+              variant="destructive"
+              className="bg-danger hover:bg-danger/90 px-6 sm:px-8 py-6 sm:py-8 rounded-none"
+            >
+              <Square size={24} fill="currentColor" />
+            </Button>
+
+            <Button
+              onClick={discard}
+              variant="ghost"
+              className="text-muted hover:text-danger px-3 sm:px-4 py-6 sm:py-8 rounded-none ml-2 sm:ml-4"
+            >
+              <Trash2 size={20} />
+            </Button>
+          </div>
         )}
       </div>
     </div>

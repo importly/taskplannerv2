@@ -27,6 +27,8 @@ interface TimerStore {
   discard: () => void;
   commit: () => void;                // resets store (DB write handled before calling this in the UI/Service layer)
   tick: () => void;                  // Helper for penalty countdown
+  handleBlur: () => void;
+  handleFocus: () => void;
   setPenalized: () => void;
   setPenaltyCountdown: (n: number | null) => void;
   toggleMiniPlayer: () => void;
@@ -156,6 +158,17 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
         setPenalized();
       }
     }
+  },
+
+  handleBlur: () => {
+    const { status, penalized } = get();
+    if (status === "ACTIVE" && !penalized) {
+      set({ penaltyCountdown: 15 });
+    }
+  },
+
+  handleFocus: () => {
+    set({ penaltyCountdown: null });
   },
 
   setPenalized: () => {

@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initDb } from "./db";
 import { useEnforcer } from "./hooks/useEnforcer";
 import { ReflectionModal } from "./components/timer/ReflectionModal";
+import { SettingsModal } from "./components/settings/SettingsModal";
+import { Settings } from "lucide-react";
 import CommandCenter from "./pages/CommandCenter";
 import GoalsDashboard from "./pages/GoalsDashboard";
 import Whirlwind from "./pages/Whirlwind";
@@ -17,6 +19,7 @@ function AppShell() {
   const [page, setPage] = useState<Page>("command-center");
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
     initDb()
@@ -62,6 +65,16 @@ function AppShell() {
           onClick={() => setPage("stats")}
           label="Player Stats"
         />
+
+        <div className="mt-auto pt-6 border-t border-white/5">
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-3 px-4 py-3 w-full text-muted hover:text-white hover:bg-white/5 rounded-xl transition-all group"
+          >
+            <Settings size={18} className="group-hover:rotate-90 transition-transform duration-500" />
+            <span className="text-sm font-medium">Settings</span>
+          </button>
+        </div>
       </nav>
       <main className="flex-1 overflow-auto bg-[#000000]">
         {page === "command-center" && <CommandCenter />}
@@ -70,6 +83,7 @@ function AppShell() {
         {page === "stats" && <Stats />}
       </main>
       <ReflectionModal />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }
