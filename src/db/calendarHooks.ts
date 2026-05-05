@@ -6,8 +6,7 @@ import {
 } from "../services/googleAuth";
 import { 
   getTodaysEvents, 
-  getNext12hEvents, 
-  GoogleCalendarEvent 
+  getNext12hEvents 
 } from "../services/googleCalendarService";
 
 /**
