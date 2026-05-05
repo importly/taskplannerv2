@@ -147,6 +147,14 @@ body,
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@layer utilities {
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
