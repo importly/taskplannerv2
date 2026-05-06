@@ -19,6 +19,9 @@ interface TimerStore {
   // Window
   isMiniPlayer: boolean;
 
+  // Configuration
+  targetMinutes: number;
+
   // Actions
   start: () => void;
   pause: () => void;
@@ -32,6 +35,7 @@ interface TimerStore {
   setPenalized: () => void;
   setPenaltyCountdown: (n: number | null) => void;
   toggleMiniPlayer: () => void;
+  setTargetMinutes: (m: number) => void;
 }
 
 export const useTimerStore = create<TimerStore>((set, get) => ({
@@ -43,6 +47,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   penalized: false,
   penaltyCountdown: null,
   isMiniPlayer: false,
+  targetMinutes: 25,
 
   start: () => {
     if (get().status !== "IDLE") return;
@@ -181,5 +186,9 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
 
   toggleMiniPlayer: () => {
     set((state) => ({ isMiniPlayer: !state.isMiniPlayer }));
+  },
+
+  setTargetMinutes: (m: number) => {
+    set({ targetMinutes: m });
   },
 }));

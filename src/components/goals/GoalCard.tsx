@@ -17,32 +17,31 @@ export function GoalCard({ title, progress, totalFocusTimeSeconds, colorIndex, o
   return (
     <div
       onClick={onClick}
-      className="bg-white/[0.03] backdrop-blur-md border border-white/[0.07] rounded-[16px] p-5 cursor-pointer transition-all duration-200 hover:bg-white/[0.07] hover:border-white/[0.14] flex flex-col justify-between min-h-[130px]"
+      className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[16px] cursor-pointer transition-all duration-200 hover:bg-white/10 hover:border-white/20 flex flex-col justify-between w-full"
+      style={{ padding: "14px 14px 14px 14px", minHeight: 150 }}
     >
-      <div>
-        {/* Top Row: Title & Badge */}
-        <div className="flex justify-between items-start gap-2.5 mb-3">
-          <div className="text-[14px] font-semibold text-white/90 tracking-[-0.01em] leading-snug line-clamp-2">
-            {title}
-          </div>
-          <div className="font-mono text-[10px] font-semibold px-2.5 py-1 rounded-full bg-white/[0.07] text-white/45 border border-white/[0.09] whitespace-nowrap shrink-0">
-            GOAL
-          </div>
+      {/* Top Row: Title & Badge */}
+      <div className="flex justify-between items-start gap-3">
+        <div className="text-[16px] font-semibold text-white/90 tracking-[-0.01em] leading-snug line-clamp-2">
+          {title}
         </div>
+        <div className="font-mono text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/10 text-white/50 border border-white/10 whitespace-nowrap shrink-0 uppercase">
+          Systems
+        </div>
+      </div>
 
-        {/* Stats Row */}
-        <div className="font-mono text-[11px] text-[#8E8E93] mb-3.5">
-          <span className="text-white/65 font-medium">{h}h {m}m</span> total
-        </div>
+      {/* Stats Row */}
+      <div className="font-mono text-[13px] text-[#8E8E93]">
+        <span className="text-white/70 font-medium">{h}h {m}m</span> total
       </div>
 
       {/* Progress Section */}
       <div className="mt-auto">
         <div className="flex justify-between items-end mb-1.5">
-          <span className="text-[10px] text-[#3A3A3C] font-semibold tracking-[0.06em] uppercase">
+          <span className="text-[11px] text-[#3A3A3C] font-bold tracking-[0.08em] uppercase">
             Progress
           </span>
-          <span className="font-mono text-[10px] font-bold" style={{ color: accentColor }}>
+          <span className="font-mono text-[11px] font-bold" style={{ color: accentColor }}>
             {progress}%
           </span>
         </div>

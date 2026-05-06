@@ -13,16 +13,16 @@ export const CalendarFeed = () => {
   if (!isConnected) {
     return (
       <div className="flex flex-col h-full">
-        <div className="text-[9px] font-bold tracking-[0.12em] text-[#3A3A3C] uppercase mb-2">Calendar · Next 12h</div>
+        <div className="text-xs font-bold tracking-[0.12em] text-[#3A3A3C] uppercase mb-3">Calendar · Next 12h</div>
         <div className="flex flex-col items-start gap-3 pt-1">
           <Calendar className="w-5 h-5 text-[#3A3A3C]" />
           <div>
-            <div className="text-[10px] text-white/30 mb-2">No calendar connected</div>
+            <div className="text-sm text-white/30 mb-2">No calendar connected</div>
             <Button
               variant="ghost"
               size="sm"
               onClick={connect}
-              className="text-[9px] uppercase tracking-widest font-bold border border-white/10 hover:bg-white/5 text-white/40 px-2 py-1 h-auto"
+              className="text-xs uppercase tracking-widest font-bold border border-white/10 hover:bg-white/5 text-white/40 px-3 py-1.5 h-auto"
             >
               Connect →
             </Button>
@@ -40,7 +40,7 @@ export const CalendarFeed = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="text-[9px] font-bold tracking-[0.12em] text-[#3A3A3C] uppercase mb-2">Calendar Â· Next 12h</div>
+      <div className="text-xs font-bold tracking-[0.12em] text-[#3A3A3C] uppercase mb-3">Calendar · Next 12h</div>
       <div className="flex flex-col">
         {eventsLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
@@ -55,18 +55,18 @@ export const CalendarFeed = () => {
           events.map((event) => {
             const current = isCurrent(event.start.dateTime, event.end.dateTime);
             return (
-              <div key={event.id} className="py-1 border-b border-white/[0.04] last:border-0 flex items-start gap-2">
-                <div className={`text-[9px] font-mono mt-0.5 ${current ? 'text-[#0A84FF]' : 'text-[#48484A]'}`}>
+              <div key={event.id} className="py-2 border-b border-white/[0.04] last:border-0 flex items-start gap-3">
+                <div className={`text-sm font-mono mt-0.5 ${current ? 'text-[#0A84FF]' : 'text-[#48484A]'}`}>
                   {new Date(event.start.dateTime || "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                 </div>
-                <div className="text-[10px] text-white/45 overflow-hidden text-ellipsis whitespace-nowrap">
+                <div className="text-base text-white/45 overflow-hidden text-ellipsis whitespace-nowrap">
                   {event.summary}
                 </div>
               </div>
             );
           })
         ) : (
-          <div className="text-[10px] text-white/30 italic py-2">No upcoming events in the next 12h</div>
+          <div className="text-sm text-white/30 italic py-2">No upcoming events in the next 12h</div>
         )}
       </div>
     </div>

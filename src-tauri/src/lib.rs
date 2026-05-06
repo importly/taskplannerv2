@@ -1,4 +1,63 @@
 use tauri::{Manager, Emitter};
+use std::collections::HashMap;
+
+#[tauri::command]
+async fn exchange_ms_token(
+    code: String,
+    code_verifier: String,
+    redirect_uri: String,
+    client_id: String,
+    tenant_id: String,
+    scope: String,
+) -> Result<String, String> {
+    let client = reqwest::Client::new();
+    let mut params = HashMap::new();
+    params.insert("client_id", client_id.as_str());
+    params.insert("code", code.as_str());
+    params.insert("code_verifier", code_verifier.as_str());
+    params.insert("grant_type", "authorization_code");
+    params.insert("redirect_uri", redirect_uri.as_str());
+    params.insert("scope", scope.as_str());
+
+    let response = client
+        .post(format!(
+            "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
+            tenant_id
+        ))
+        .form(&params)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    response.text().await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn refresh_ms_token(
+    refresh_token: String,
+    client_id: String,
+    tenant_id: String,
+    scope: String,
+) -> Result<String, String> {
+    let client = reqwest::Client::new();
+    let mut params = HashMap::new();
+    params.insert("client_id", client_id.as_str());
+    params.insert("refresh_token", refresh_token.as_str());
+    params.insert("grant_type", "refresh_token");
+    params.insert("scope", scope.as_str());
+
+    let response = client
+        .post(format!(
+            "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
+            tenant_id
+        ))
+        .form(&params)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    response.text().await.map_err(|e| e.to_string())
+}
 
 #[tauri::command]
 async fn minimize_window(window: tauri::Window) -> Result<(), String> {
@@ -49,6 +108,15 @@ async fn set_mini_player(window: tauri::Window, enabled: bool) -> Result<(), Str
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            // Forward any deep-link URL from argv to the frontend
+            if let Some(url) = argv.iter().find(|a| a.starts_with("accountability://")) {
+                let _ = app.emit("deep-link-received", url.clone());
+            }
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_deep_link::init())
@@ -58,9 +126,17 @@ pub fn run() {
             minimize_window,
             toggle_maximize_window,
             close_window,
-            start_drag
+            start_drag,
+            exchange_ms_token,
+            refresh_ms_token,
         ])
         .setup(|app| {
+            #[cfg(any(windows, target_os = "linux"))]
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                app.deep_link().register_all()?;
+            }
+
             let win = app.get_webview_window("main").unwrap();
             let win_clone = win.clone();
             win.on_window_event(move |event| {

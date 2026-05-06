@@ -3,13 +3,11 @@ import { useTimerStore } from "../stores/timerStore";
 import { CalendarNextUp } from "../components/cc/CalendarNextUp";
 import { GoalStatsPanel } from "../components/cc/GoalStatsPanel";
 import { CompactWhirlwind } from "../components/cc/CompactWhirlwind";
-import { CalendarFeed } from "../components/cc/CalendarFeed";
 import { HeatmapStrip } from "../components/cc/HeatmapStrip";
-
-const TARGET_SECONDS = 1500;
+import { TimePicker } from "../components/timer/TimePicker";
 
 export default function CommandCenter() {
-  const { status, startTime, focusElapsedSeconds, start, pause, resume, stop, penalized } = useTimerStore();
+  const { status, startTime, focusElapsedSeconds, start, pause, resume, stop, penalized, targetMinutes } = useTimerStore();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
@@ -36,7 +34,6 @@ export default function CommandCenter() {
       return {
         bg: "#FF3B30",
         targetP: 1,
-        waveY: 72,
       };
     }
     switch (status) {
@@ -44,20 +41,17 @@ export default function CommandCenter() {
         return {
           bg: "#E1FF00",
           targetP: 1, // Actually driven by time, not fixed 1
-          waveY: 96,
         };
       case "PAUSED":
         return {
           bg: "#1C1C1E",
           targetP: 1, // Driven by frozen time
-          waveY: 188,
         };
       case "IDLE":
       default:
         return {
           bg: "transparent",
           targetP: 0,
-          waveY: 280, // Below the view
         };
     }
   };
@@ -72,15 +66,21 @@ export default function CommandCenter() {
         currentSeconds += (Date.now() - startTime) / 1000;
       }
       
-      const timeP = status === "IDLE" ? 0 : Math.min(currentSeconds / TARGET_SECONDS, 1);
+      const targetSeconds = useTimerStore.getState().targetMinutes * 60;
+      const timeP = status === "IDLE" ? 0 : Math.min(currentSeconds / targetSeconds, 1);
       
-      // Update digits directly
+      // Update digits directly (Countdown format)
       const formatTime = (secs: number) => {
-        const h = Math.floor(secs / 3600);
-        const m = Math.floor((secs % 3600) / 60);
-        const s = Math.floor(secs % 60);
-        if (h > 0) return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-        return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+        let remaining = targetSeconds - secs;
+        const isNeg = remaining < 0;
+        remaining = Math.abs(remaining);
+        
+        const h = Math.floor(remaining / 3600);
+        const m = Math.floor((remaining % 3600) / 60);
+        const s = Math.floor(remaining % 60);
+        const sign = isNeg ? "-" : "";
+        if (h > 0) return `${sign}${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+        return `${sign}${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
       };
       
       const timeStr = formatTime(currentSeconds);
@@ -97,35 +97,13 @@ export default function CommandCenter() {
       // Construct clip path
       if (waterRef.current && zoneRef.current) {
         if (!cfg.bg || p < 0.005) {
-          waterRef.current.style.clipPath = "inset(0 0 0 100%)";
+          waterRef.current.style.clipPath = "inset(0 100% 0 0)";
           waterRef.current.style.background = "transparent";
         } else {
           waterRef.current.style.background = cfg.bg;
-          
-          const W = zoneRef.current.clientWidth;
-          const H = zoneRef.current.clientHeight;
-          const floodX = W * p;
-          
-          const baseY = H + 20;
-          const waveY = baseY + (cfg.waveY - baseY) * p;
-          
-          const osc = (p > 0.92 && status !== "IDLE") ? 7 * Math.sin(phaseRef.current) : 0;
-          const ey = waveY + osc;
-          const py = waveY - 28 + osc;
-          
-          const c1x = floodX * 0.25;
-          const c2x = floodX * 0.75;
-          
-          if (floodX >= 1) {
-            const d = [
-              `M 0,${ey.toFixed(1)}`,
-              `C ${c1x.toFixed(1)},${py.toFixed(1)} ${c2x.toFixed(1)},${py.toFixed(1)} ${floodX.toFixed(1)},${ey.toFixed(1)}`,
-              `L ${floodX.toFixed(1)},${H}`,
-              `L 0,${H}`,
-              `Z`
-            ].join(" ");
-            waterRef.current.style.clipPath = `path('${d}')`;
-          }
+          // Simple left-to-right fill using inset(top right bottom left)
+          // 100% right inset means 0 width. 0% right inset means full width.
+          waterRef.current.style.clipPath = `inset(0 ${(1 - p) * 100}% 0 0)`;
         }
       }
 
@@ -138,12 +116,12 @@ export default function CommandCenter() {
         cancelAnimationFrame(reqRef.current);
       }
     };
-  }, [status, startTime, focusElapsedSeconds, penalized]);
+  }, [status, startTime, focusElapsedSeconds, penalized, targetMinutes]);
 
   // Determine state labels and colors
   let stateLbl = "Idle";
-  let airLblClass = "text-[#48484A]";
-  let airDigClass = "text-white/30";
+  let airLblClass = "text-white/60";
+  let airDigClass = "text-white/50";
   let waterLblClass = "text-black/45";
   let waterDigClass = "text-black";
   let waterBtnClass = "bg-black/10 text-black/65 border-black/15";
@@ -151,7 +129,7 @@ export default function CommandCenter() {
   let topBorder = "bg-white/[0.06]";
 
   if (penalized) {
-    stateLbl = "âš  Penalized â€” 0 XP";
+    stateLbl = "PENALIZED - 0 XP";
     airLblClass = "text-[#FF3B30]";
     airDigClass = "text-[#FF3B30]";
     waterLblClass = "text-white/75";
@@ -166,67 +144,76 @@ export default function CommandCenter() {
     waterLblClass = "text-black/45";
     waterDigClass = "text-black";
     waterBtnClass = "bg-black/10 text-black/65 border-black/15";
-    botBg = "bg-[#E1FF00]/[0.07]";
+    botBg = "transparent";
     topBorder = "bg-[#E1FF00]";
   } else if (status === "PAUSED") {
     stateLbl = "Paused";
-    airLblClass = "text-[#555555]";
+    airLblClass = "text-white/50";
     airDigClass = "text-white/40";
     waterLblClass = "text-white/20";
     waterDigClass = "text-white/30";
-    waterBtnClass = "bg-white/5 text-white/35 border-white/5";
+    waterBtnClass = "bg-white/5 text-white/50 border-white/10";
     botBg = "bg-white/5";
-    topBorder = "bg-[#3A3A3C]";
+    topBorder = "bg-[#555555]";
   }
 
   // Dual layer rendering helper
   const renderTimerContent = (isWater: boolean) => {
     const isIdle = status === "IDLE";
+    const hasHours = targetMinutes >= 60;
     
     return (
       <div className={`absolute inset-0 flex items-center justify-center ${isWater ? "z-10 pointer-events-none" : "z-0"}`}>
-        <div className="flex flex-col items-center text-center" style={{ width: 380 }}>
-          <div className={`font-mono text-[10px] font-bold tracking-[0.14em] uppercase mb-2 ${isWater ? waterLblClass : airLblClass}`}>
-            {stateLbl}
-          </div>
-          <div
-            ref={isWater ? waterDigRef : airDigRef}
-            className={`font-mono font-bold leading-none ${isWater ? waterDigClass : airDigClass}`}
-            style={{ fontSize: 96, letterSpacing: "-0.06em" }}
-          >
-            00:00
+        <div className={`relative flex items-center transition-transform duration-500 ease-in-out ${isIdle ? "-translate-x-[70px]" : "translate-x-0"}`}>
+          
+          <div className="flex flex-col items-center text-center transition-transform duration-500 origin-center relative z-10" style={{ transform: isIdle ? "scale(0.85)" : "scale(1)" }}>
+            <div className={`text-xs font-bold tracking-[0.14em] uppercase mb-4 ${isWater ? waterLblClass : airLblClass}`}>
+              {stateLbl}
+            </div>
+            <div
+              ref={isWater ? waterDigRef : airDigRef}
+              className={`font-sans tabular-nums font-bold leading-none ${isWater ? waterDigClass : airDigClass}`}
+              style={{ fontSize: hasHours ? "clamp(72px, 11vw, 180px)" : "clamp(96px, 15vw, 240px)", letterSpacing: "-0.04em", lineHeight: "0.85", transition: "font-size 0.5s ease" }}
+            >
+              {String(targetMinutes).padStart(2, "0")}:00
+            </div>
+
+            {/* Tags (removed to prevent overlap & confusion) */}
+          <div className="flex gap-1.5 justify-center mt-2">
           </div>
 
-          {/* Tags */}
-          <div className="flex gap-1.5 justify-center mt-2.5" style={{ minHeight: 22 }}>
-            {!isIdle && (
-              <div className={`text-[10px] px-2 py-0.5 rounded-full border ${isWater ? (penalized ? "bg-[#FF3B30]/10 text-[#FF3B30] border-[#FF3B30]/20" : "bg-black/10 text-black border-black/20") : "bg-white/5 text-white/40 border-white/10"}`}>
-                #focus
-              </div>
-            )}
-          </div>
-
-          {/* Buttons */}
-          <div className="flex gap-2 justify-center mt-4" style={{ minHeight: 34, pointerEvents: isWater ? "none" : "auto" }}>
+            {/* Buttons */}
+          <div className="flex gap-4 justify-center mt-8" style={{ minHeight: 48, pointerEvents: isWater ? "none" : "auto" }}>
             {isIdle ? (
               <button
                 onClick={start}
-                style={{ padding: "7px 20px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
-                className={isWater ? waterBtnClass : "bg-[#E1FF00] text-black"}
+                style={{ padding: "12px 32px" }}
+                className={`rounded-full text-base font-semibold transition-all hover:scale-105 active:scale-95 ${isWater ? waterBtnClass : "bg-[#E1FF00] text-black"}`}
               >
                 Start Session
               </button>
             ) : status === "ACTIVE" ? (
               <>
-                <button onClick={pause} style={{ padding: "7px 20px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" }} className={`border ${isWater ? waterBtnClass : "bg-white/5 text-white/70 border-white/10"}`}>Pause</button>
-                <button onClick={stop} style={{ padding: "7px 20px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" }} className={`border ${isWater ? waterBtnClass : "bg-[#FF3B30]/10 text-[#FF3B30] border-[#FF3B30]/20"}`}>Stop</button>
+                <button onClick={pause} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-white/10 ${isWater ? waterBtnClass : "bg-white/5 text-white/90 border-white/20"}`}>Pause</button>
+                <button onClick={stop} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-[#FF3B30]/20 ${isWater ? waterBtnClass : "bg-[#FF3B30]/10 text-[#FF3B30] border-[#FF3B30]/30"}`}>Stop</button>
               </>
             ) : (
               <>
-                <button onClick={resume} style={{ padding: "7px 20px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" }} className={`border ${isWater ? waterBtnClass : "bg-white/5 text-white/45 border-white/7"}`}>Resume</button>
-                <button onClick={stop} style={{ padding: "7px 20px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" }} className={`border ${isWater ? waterBtnClass : "bg-white/5 text-white/45 border-white/7"}`}>Stop</button>
+                <button onClick={resume} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-white/10 ${isWater ? waterBtnClass : "bg-white/5 text-white/90 border-white/20"}`}>Resume</button>
+                <button onClick={stop} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-white/10 ${isWater ? waterBtnClass : "bg-white/5 text-white/70 border-white/20"}`}>Stop</button>
               </>
             )}
+          </div>
+          
+          {/* Picker Side Panel - Only in Air layer */}
+          {!isWater && (
+            <div 
+              className={`absolute left-full top-1/2 -translate-y-1/2 transition-all duration-500 ease-in-out ${isIdle ? "opacity-100 translate-x-0 delay-100" : "opacity-0 translate-x-8 pointer-events-none"}`}
+              style={{ marginLeft: 60 }}
+            >
+              <TimePicker />
+            </div>
+          )}
           </div>
         </div>
       </div>
@@ -247,9 +234,9 @@ export default function CommandCenter() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-black text-white font-sans overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-black text-white font-sans overflow-hidden">
       {/* TOP ZONE — full-width relative container; flood bar fills this entire band */}
-      <div ref={zoneRef} className="relative overflow-hidden flex-none min-h-[300px] border-b border-white/[0.07]">
+      <div ref={zoneRef} className="relative overflow-hidden border-b border-white/[0.07]" style={{ flex: "0 0 62%" }}>
         {/* State indicator — 3px top edge */}
         <div className={`absolute top-0 left-0 right-0 h-[3px] z-40 transition-colors duration-[350ms] ${topBorder}`} />
 
@@ -265,18 +252,18 @@ export default function CommandCenter() {
 
         {/* Left flank — glass panel, absolutely overlaid on timer zone */}
         <div
-          className="absolute z-30"
+          className="absolute z-30 transition-all duration-700 ease-in-out"
           style={{
             top: "50%",
             transform: "translateY(-50%)",
-            left: 20,
-            width: 160,
+            left: "2vw",
+            width: 260,
             background: "rgba(0,0,0,0.75)",
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
             border: "1px solid rgba(255,255,255,0.06)",
             borderRadius: 10,
-            padding: "12px 14px",
+            padding: "16px 20px",
           }}
         >
           <CalendarNextUp />
@@ -284,36 +271,33 @@ export default function CommandCenter() {
 
         {/* Right flank — glass panel, absolutely overlaid on timer zone */}
         <div
-          className="absolute z-30"
+          className="absolute z-30 transition-all duration-700 ease-in-out"
           style={{
             top: "50%",
             transform: "translateY(-50%)",
-            right: 20,
-            width: 160,
+            right: "2vw",
+            width: 260,
             background: "rgba(0,0,0,0.75)",
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
             border: "1px solid rgba(255,255,255,0.06)",
             borderRadius: 10,
-            padding: "12px 14px",
+            padding: "16px 20px",
           }}
         >
           <GoalStatsPanel />
         </div>
       </div>
 
-      {/* BOTTOM ZONE — flat grid, divided by single hairline, no box wrappers */}
-      <div className={`flex-1 grid grid-cols-2 transition-colors duration-500 min-h-0 ${botBg}`}>
-        <div className="border-r border-white/[0.07] overflow-hidden" style={{ padding: "14px 20px" }}>
+      {/* BOTTOM ZONE — span width cleanly */}
+      <div className={`flex-1 flex transition-colors duration-500 min-h-0 ${botBg}`}>
+        <div className="flex-1 overflow-hidden" style={{ padding: "20px 30px" }}>
           <CompactWhirlwind />
-        </div>
-        <div className="overflow-hidden" style={{ padding: "14px 20px" }}>
-          <CalendarFeed />
         </div>
       </div>
 
-      {/* HEATMAP STRIP — 40px, flat, no box */}
-      <div className="flex-none border-t border-white/[0.07]" style={{ padding: "10px 20px", height: 40 }}>
+      {/* HEATMAP STRIP — 44px, full width, sleek ribbon */}
+      <div className="relative flex-none border-t border-white/[0.05] bg-black/40 backdrop-blur-md" style={{ padding: "14px 24px", height: 44 }}>
         <HeatmapStrip />
       </div>
     </div>

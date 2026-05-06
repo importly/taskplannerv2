@@ -1,6 +1,5 @@
 import { X, Settings, Calendar } from "lucide-react";
 import { TagManager } from "./TagManager";
-import { Button } from "../ui/button";
 import { useGoogleCalendarAuth } from "../../db/calendarHooks";
 
 interface SettingsModalProps {
@@ -13,57 +12,146 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 md:p-8 animate-in fade-in duration-300">
-      <div className="bg-[#050505] border border-white/10 w-full max-w-4xl max-h-[90vh] rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-accent/10 text-accent">
-              <Settings size={24} />
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", padding: 24 }}
+    >
+      <div
+        className="flex flex-col w-full"
+        style={{
+          maxWidth: 680,
+          maxHeight: "88vh",
+          background: "#0a0a0a",
+          border: "1px solid rgba(255,255,255,0.10)",
+          borderRadius: 20,
+        }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between"
+          style={{
+            padding: "20px 28px",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            flexShrink: 0,
+          }}
+        >
+          <div className="flex items-center" style={{ gap: 12 }}>
+            <div
+              className="flex items-center justify-center"
+              style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: "rgba(225,255,0,0.08)",
+                color: "#E1FF00",
+              }}
+            >
+              <Settings size={18} />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white tracking-tighter uppercase">System Settings</h2>
-              <p className="text-white/40 text-xs font-mono uppercase tracking-widest mt-1">Configure your Proxima environment</p>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+                Settings
+              </div>
+              <div
+                className="font-mono"
+                style={{ fontSize: 10, color: "#48484A", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 2 }}
+              >
+                Configure your environment
+              </div>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
-            className="p-3 rounded-full hover:bg-white/5 text-white/20 hover:text-white transition-all"
+          <button
+            onClick={onClose}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 32, height: 32, borderRadius: "50%",
+              background: "rgba(255,255,255,0.05)", border: "none",
+              cursor: "pointer", color: "#8E8E93",
+            }}
           >
-            <X size={24} />
+            <X size={16} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-12">
-           <section>
-             <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-muted mb-6 flex items-center gap-2">
-               <Calendar size={14} />
-               Google Calendar
-             </h3>
-             <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-               <div className="flex items-center gap-4">
-                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-white/10'}`} />
-                 <span className="text-sm font-medium text-white/80">
-                   {isConnected ? 'Connected to Google' : 'Not connected'}
-                 </span>
-               </div>
-               {isConnected && (
-                 <button 
-                   onClick={() => disconnect()}
-                   className="text-[10px] font-black uppercase tracking-widest text-danger hover:text-danger/80 transition-colors"
-                 >
-                   Disconnect Account
-                 </button>
-               )}
-             </div>
-           </section>
+        {/* Body */}
+        <div
+          className="no-scrollbar"
+          style={{ flex: 1, overflowY: "auto", padding: "28px 28px 36px" }}
+        >
+          {/* Google Calendar section */}
+          <section style={{ marginBottom: 36 }}>
+            <div
+              className="font-mono flex items-center"
+              style={{
+                fontSize: 10, fontWeight: 600, letterSpacing: "0.1em",
+                textTransform: "uppercase", color: "#8E8E93",
+                marginBottom: 14, gap: 6,
+              }}
+            >
+              <Calendar size={12} />
+              Google Calendar
+            </div>
 
-           <TagManager />
+            <div
+              className="flex items-center justify-between"
+              style={{
+                padding: "16px 18px",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 12,
+              }}
+            >
+              <div className="flex items-center" style={{ gap: 12 }}>
+                <div
+                  style={{
+                    width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                    background: isConnected ? "#30D158" : "rgba(255,255,255,0.15)",
+                    boxShadow: isConnected ? "0 0 8px rgba(48,209,88,0.5)" : "none",
+                  }}
+                />
+                <span style={{ fontSize: 14, color: isConnected ? "rgba(255,255,255,0.85)" : "#8E8E93" }}>
+                  {isConnected ? "Connected to Google Calendar" : "Not connected"}
+                </span>
+              </div>
+              {isConnected && (
+                <button
+                  onClick={() => disconnect()}
+                  className="font-mono"
+                  style={{
+                    fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+                    textTransform: "uppercase", color: "#FF3B30",
+                    background: "transparent", border: "none", cursor: "pointer",
+                  }}
+                >
+                  Disconnect
+                </button>
+              )}
+            </div>
+          </section>
+
+          {/* Tag Manager */}
+          <TagManager />
         </div>
 
-        <div className="p-6 bg-white/[0.01] border-t border-white/5 flex justify-end">
-          <Button onClick={onClose} variant="outline" className="px-8 border-white/10 hover:bg-white/5 text-white/60 hover:text-white font-bold">
-            CLOSE REGISTRY
-          </Button>
+        {/* Footer */}
+        <div
+          className="flex justify-end"
+          style={{
+            padding: "16px 28px",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            flexShrink: 0,
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.6)",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 20, padding: "8px 22px",
+              cursor: "pointer", transition: "all 150ms",
+            }}
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

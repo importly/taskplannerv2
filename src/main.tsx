@@ -2,29 +2,49 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
+import { onOpenUrl, getCurrent } from "@tauri-apps/plugin-deep-link";
+import { invoke } from "@tauri-apps/api/core";
+import { emit, listen } from "@tauri-apps/api/event";
+import { initDb } from "./db";
 import { exchangeCodeForToken } from "./services/googleAuth";
+import { exchangeMsCodeForToken } from "./services/msalAuth";
 
-// Listen for deep links
-onOpenUrl((urls) => {
-  console.log("Deep link received:", urls);
+async function handleDeepLinkUrls(urls: string[], closeAfter = false) {
   for (const url of urls) {
+    const urlObj = new URL(url);
+    const code = urlObj.searchParams.get("code");
+    if (!code) continue;
+
     if (url.startsWith("accountability://oauth/callback")) {
-      const urlObj = new URL(url);
-      const code = urlObj.searchParams.get("code");
-      if (code) {
-        exchangeCodeForToken(code)
-          .then(() => {
-            console.log("Successfully exchanged Google OAuth code for token");
-            // You might want to emit an event or update state here if needed
-          })
-          .catch((err) => {
-            console.error("Failed to exchange Google OAuth code:", err);
-          });
+      try {
+        await initDb();
+        await exchangeCodeForToken(code);
+        await emit("google-auth-complete");
+      } catch (e) {
+        console.error("Google OAuth callback failed:", e);
+      }
+    } else if (url.startsWith("accountability://ms-callback")) {
+      try {
+        await initDb();
+        await exchangeMsCodeForToken(code);
+        await emit("ms-auth-complete");
+        if (closeAfter) invoke("close_window").catch(() => {});
+      } catch (e) {
+        console.error("MS OAuth callback failed:", e);
       }
     }
   }
-});
+}
+
+getCurrent().then((urls) => {
+  if (urls) handleDeepLinkUrls(urls, true);
+}).catch(console.error);
+
+onOpenUrl((urls) => handleDeepLinkUrls(urls, false)).catch(console.error);
+
+listen<string>("deep-link-received", (event) => {
+  handleDeepLinkUrls([event.payload], false);
+}).catch(console.error);
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

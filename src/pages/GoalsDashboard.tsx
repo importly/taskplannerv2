@@ -53,16 +53,16 @@ export default function GoalsDashboard() {
         style={{ padding: "36px 40px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
       >
         <div>
-          <div className="text-[26px] font-bold tracking-[-0.025em] text-white">
+          <div className="text-[30px] font-bold tracking-[-0.025em] text-white">
             Wildly Important Goals
           </div>
-          <div className="text-[12px] mt-1" style={{ color: "#48484A" }}>
+          <div className="text-[14px] mt-1" style={{ color: "#48484A" }}>
             Separate from the whirlwind. What actually moves the needle.
           </div>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="font-semibold text-[13px] text-white transition-opacity hover:opacity-80"
+          className="font-semibold text-[14px] text-white transition-opacity hover:opacity-80"
           style={{
             background: "#0A84FF",
             borderRadius: 20,
@@ -107,7 +107,7 @@ export default function GoalsDashboard() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 items-start">
             {activeGoals?.map((goal, i) => (
               <GoalCard
                 key={goal.id}
@@ -122,9 +122,10 @@ export default function GoalsDashboard() {
             {/* New goal placeholder card */}
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center justify-center gap-2 rounded-[16px] text-[13px] font-medium transition-all duration-200 min-h-[130px] border border-dashed border-white/[0.09] bg-transparent text-[#3A3A3C] cursor-pointer hover:border-white/[0.18] hover:bg-white/[0.02] hover:text-[#8E8E93] p-5 w-full"
+              className="flex items-center justify-center gap-2 rounded-[16px] text-[14px] font-medium transition-all duration-200 border border-dashed border-white/10 bg-transparent text-[#48484A] cursor-pointer hover:border-white/20 hover:bg-white/5 hover:text-[#8E8E93] w-full"
+              style={{ minHeight: 150, padding: "14px" }}
             >
-              <div className="flex items-center justify-center text-[10px] w-4 h-4 rounded-full border-[1.5px] border-dashed border-inherit text-inherit shrink-0">
+              <div className="flex items-center justify-center text-[12px] w-5 h-5 rounded-full border-[1.5px] border-dashed border-inherit text-inherit shrink-0">
                 +
               </div>
               New Wildly Important Goal
@@ -289,13 +290,13 @@ function StripStat({ value, label }: { value: string; label: string }) {
     <div>
       <div
         className="font-mono font-bold"
-        style={{ fontSize: 28, letterSpacing: "-0.03em", color: "#fff" }}
+        style={{ fontSize: 34, letterSpacing: "-0.03em", color: "#fff" }}
       >
         {value}
       </div>
       <div
         className="font-semibold uppercase"
-        style={{ fontSize: 10, letterSpacing: "0.08em", color: "#3A3A3C", marginTop: 3 }}
+        style={{ fontSize: 12, letterSpacing: "0.08em", color: "#3A3A3C", marginTop: 4 }}
       >
         {label}
       </div>

@@ -64,7 +64,7 @@ function AppShell() {
                 borderRadius: 6,
                 fontSize: 12,
                 fontWeight: 500,
-                background: page === p ? "#1C1C1E" : "transparent",
+                background: page === p ? "rgba(255,255,255,0.07)" : "transparent",
                 color: page === p ? "#fff" : "rgba(255,255,255,0.4)",
                 border: "none",
                 cursor: "pointer",

@@ -3,7 +3,6 @@ import { useSessionStore } from "../../stores/sessionStore";
 import { useQuery } from "@tanstack/react-query";
 import { getDb } from "../../db";
 import { saveFocusSession } from "../../db/operations";
-import { Button } from "../ui/button";
 
 export const ReflectionModal = () => {
   const status = useTimerStore((state) => state.status);
@@ -54,19 +53,20 @@ export const ReflectionModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
-      <div className="bg-surface border border-border w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-6 border-b border-border">
-          <h2 className="text-2xl font-bold text-accent">Session Complete</h2>
-          <p className="text-muted text-sm mt-1">Reflect on your focus time.</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md" style={{ padding: "16px" }}>
+      <div className="flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" style={{ background: "#000000", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", width: "100%", maxWidth: "672px", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}>
+        <div style={{ padding: "32px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#ffffff", fontFamily: "'Inter', sans-serif" }}>Session Complete</h2>
+          <p style={{ color: "#8E8E93", fontSize: "14px", marginTop: "8px", fontFamily: "'Inter', sans-serif" }}>Reflect on your focus time.</p>
         </div>
 
-        <div className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
+        <div className="overflow-y-auto no-scrollbar flex flex-col" style={{ padding: "32px", gap: "24px", maxHeight: "60vh" }}>
           {/* Journal Field */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-muted uppercase tracking-widest">Journal / Narrative</label>
+          <div className="flex flex-col" style={{ gap: "10px" }}>
+            <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Journal / Narrative</label>
             <textarea
-              className="w-full h-32 bg-black/40 border border-border rounded-lg p-3 text-white focus:outline-none focus:border-accent transition-colors resize-none"
+              className="w-full h-32 focus:outline-none transition-colors resize-none"
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "14px", color: "#ffffff", fontSize: "14px", fontFamily: "'Inter', sans-serif" }}
               placeholder="What did you achieve? Any obstacles?"
               value={journalContent}
               onChange={(e) => setJournal(e.target.value)}
@@ -74,42 +74,53 @@ export const ReflectionModal = () => {
           </div>
 
           {/* Tag selection */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-muted uppercase tracking-widest">Tags</label>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <button
-                  key={tag.id}
-                  onClick={() => {
-                    if (selectedTagIds.includes(tag.id)) {
-                      setTags(selectedTagIds.filter((id) => id !== tag.id));
-                    } else {
-                      setTags([...selectedTagIds, tag.id]);
-                    }
-                  }}
-                  className={`px-3 py-1 rounded-full text-[10px] font-black transition-all border ${
-                    selectedTagIds.includes(tag.id)
-                      ? "bg-accent border-accent text-black scale-105"
-                      : "bg-transparent border-border text-muted hover:border-muted"
-                  }`}
-                >
-                  {tag.rpg_attribute.toUpperCase()}
-                </button>
-              ))}
+          <div className="flex flex-col" style={{ gap: "10px" }}>
+            <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Tags</label>
+            <div className="flex flex-wrap" style={{ gap: "8px" }}>
+              {tags.map((tag) => {
+                const isSelected = selectedTagIds.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => {
+                      if (isSelected) {
+                        setTags(selectedTagIds.filter((id) => id !== tag.id));
+                      } else {
+                        setTags([...selectedTagIds, tag.id]);
+                      }
+                    }}
+                    style={{
+                      padding: "6px 14px",
+                      borderRadius: "20px",
+                      border: isSelected ? "1px solid rgba(255,255,255,0.2)" : "1px solid rgba(255,255,255,0.1)",
+                      background: isSelected ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+                      color: isSelected ? "#ffffff" : "#8E8E93",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      fontFamily: "'Inter', sans-serif",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    {tag.rpg_attribute.toUpperCase()}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Goal linking */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-muted uppercase tracking-widest">Linked Goal</label>
+          <div className="flex flex-col" style={{ gap: "10px" }}>
+            <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Linked Goal</label>
             <select
-              className="w-full bg-black/40 border border-border rounded-lg p-3 text-white focus:outline-none focus:border-accent transition-colors appearance-none"
+              className="w-full focus:outline-none transition-colors appearance-none"
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "14px", color: "#ffffff", fontSize: "14px", fontFamily: "'Inter', sans-serif" }}
               value={linkedGoalId || ""}
               onChange={(e) => setGoal(e.target.value || null)}
             >
-              <option value="">No goal linked</option>
+              <option value="" style={{ background: "#000" }}>No goal linked</option>
               {goals.map((goal) => (
-                <option key={goal.id} value={goal.id}>
+                <option key={goal.id} value={goal.id} style={{ background: "#000" }}>
                   {goal.title}
                 </option>
               ))}
@@ -117,13 +128,21 @@ export const ReflectionModal = () => {
           </div>
         </div>
 
-        <div className="p-6 bg-black/20 flex gap-4">
-          <Button onClick={handleCommit} className="flex-1 bg-accent text-black hover:bg-accent/90 py-6 font-black tracking-tight">
-            COMMIT SESSION
-          </Button>
-          <Button onClick={handleDiscard} variant="ghost" className="text-muted hover:text-danger font-bold">
-            DISCARD
-          </Button>
+        <div className="flex items-center" style={{ padding: "24px 32px", gap: "16px", borderTop: "1px solid rgba(255,255,255,0.08)", background: "#000000" }}>
+          <button 
+            onClick={handleCommit} 
+            style={{ flex: 1, background: "#E1FF00", color: "#000000", padding: "12px 24px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, fontFamily: "'Inter', sans-serif", border: "none", cursor: "pointer", transition: "all 0.2s ease" }}
+          >
+            Commit Session
+          </button>
+          <button 
+            onClick={handleDiscard} 
+            style={{ background: "transparent", color: "rgba(255,255,255,0.5)", padding: "12px 16px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, fontFamily: "'Inter', sans-serif", border: "none", cursor: "pointer", transition: "color 0.2s ease" }}
+            onMouseOver={(e) => e.currentTarget.style.color = "#FF3B30"}
+            onMouseOut={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.5)"}
+          >
+            Discard
+          </button>
         </div>
       </div>
     </div>

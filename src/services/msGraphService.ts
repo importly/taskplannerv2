@@ -1,9 +1,9 @@
 import { Client } from "@microsoft/microsoft-graph-client";
-import { getToken } from "./msalAuth";
+import { acquireMsToken } from "./msalAuth";
 import type { TodoTask, TodoTaskList } from "microsoft-graph";
 
 async function getAuthenticatedClient() {
-  const token = await getToken();
+  const token = await acquireMsToken();
   if (!token) throw new Error("Not authenticated");
   
   return Client.init({
