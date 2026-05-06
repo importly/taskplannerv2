@@ -7,37 +7,30 @@ export const CalendarFeed = () => {
   const { data: events, isLoading: eventsLoading } = useNext12hEvents();
 
   if (authLoading) {
-    return (
-      <div className="glass-surface p-4 rounded-xl flex flex-col gap-2 w-full max-w-md h-64 animate-pulse" />
-    );
+    return <div className="h-full w-full animate-pulse" />;
   }
 
   if (!isConnected) {
     return (
-      <div className="glass-surface p-4 rounded-xl flex flex-col items-center justify-center gap-4 w-full max-w-md h-64 border border-white/5 backdrop-blur-md">
-        <Calendar className="w-8 h-8 text-muted" />
-        <div className="text-center">
-          <h3 className="text-sm font-bold text-white mb-1">Calendar Disconnected</h3>
-          <p className="text-xs text-muted mb-4">Connect your Google Calendar to see your schedule</p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={connect}
-            className="text-[10px] uppercase tracking-widest font-bold border-white/10 hover:bg-white/5"
-          >
-            Connect Account
-          </Button>
+      <div className="flex flex-col h-full">
+        <div className="text-[9px] font-bold tracking-[0.12em] text-[#3A3A3C] uppercase mb-2">Calendar · Next 12h</div>
+        <div className="flex flex-col items-start gap-3 pt-1">
+          <Calendar className="w-5 h-5 text-[#3A3A3C]" />
+          <div>
+            <div className="text-[10px] text-white/30 mb-2">No calendar connected</div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={connect}
+              className="text-[9px] uppercase tracking-widest font-bold border border-white/10 hover:bg-white/5 text-white/40 px-2 py-1 h-auto"
+            >
+              Connect →
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
-
-  const formatTimeRange = (start?: string, end?: string) => {
-    if (!start || !end) return "";
-    const s = new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    const e = new Date(end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    return `${s} - ${e}`;
-  };
 
   const isCurrent = (start?: string, end?: string) => {
     if (!start || !end) return false;
@@ -46,38 +39,34 @@ export const CalendarFeed = () => {
   };
 
   return (
-    <div className="glass-surface p-4 rounded-xl flex flex-col gap-2 w-full max-w-md min-h-64 border border-white/5 backdrop-blur-md">
-      <h3 className="text-[10px] font-bold text-muted uppercase tracking-widest mb-2">Calendar Feed</h3>
-      <div className="flex flex-col gap-3">
+    <div className="flex flex-col h-full">
+      <div className="text-[9px] font-bold tracking-[0.12em] text-[#3A3A3C] uppercase mb-2">Calendar Â· Next 12h</div>
+      <div className="flex flex-col">
         {eventsLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex gap-3 animate-pulse">
+            <div key={i} className="flex gap-3 animate-pulse py-1">
               <div className="w-1 bg-white/5 rounded" />
               <div className="flex-1">
-                <div className="h-4 bg-white/5 rounded w-3/4 mb-1" />
-                <div className="h-3 bg-white/5 rounded w-1/4" />
+                <div className="h-3 bg-white/5 rounded w-3/4 mb-1" />
               </div>
             </div>
           ))
         ) : events && events.length > 0 ? (
-          events.map((event) => (
-            <div key={event.id} className="flex gap-3 group">
-              <div className={`w-1 rounded transition-colors ${isCurrent(event.start.dateTime, event.end.dateTime) ? 'bg-accent shadow-[0_0_8px_rgba(var(--accent-rgb),0.5)]' : 'bg-white/10'}`} />
-              <div className="flex-1">
-                <div className={`text-sm font-mono transition-opacity ${isCurrent(event.start.dateTime, event.end.dateTime) ? 'text-white font-medium' : 'text-white/70'}`}>
+          events.map((event) => {
+            const current = isCurrent(event.start.dateTime, event.end.dateTime);
+            return (
+              <div key={event.id} className="py-1 border-b border-white/[0.04] last:border-0 flex items-start gap-2">
+                <div className={`text-[9px] font-mono mt-0.5 ${current ? 'text-[#0A84FF]' : 'text-[#48484A]'}`}>
+                  {new Date(event.start.dateTime || "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                </div>
+                <div className="text-[10px] text-white/45 overflow-hidden text-ellipsis whitespace-nowrap">
                   {event.summary}
                 </div>
-                <div className="text-[10px] text-muted font-mono uppercase tracking-tighter">
-                  {formatTimeRange(event.start.dateTime, event.end.dateTime)}
-                  {isCurrent(event.start.dateTime, event.end.dateTime) && (
-                    <span className="ml-2 text-accent animate-pulse">● NOW</span>
-                  )}
-                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
-          <div className="text-xs text-muted italic py-8 text-center">No upcoming events in the next 12h</div>
+          <div className="text-[10px] text-white/30 italic py-2">No upcoming events in the next 12h</div>
         )}
       </div>
     </div>

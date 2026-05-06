@@ -79,8 +79,8 @@ export const TimerDisplay = () => {
 
       {/* Giant Digits */}
       <div
-        className={`text-[5rem] sm:text-[8rem] lg:text-[12rem] font-mono font-bold leading-none tracking-tighter transition-all duration-500 ${getStatusColorClass()}`}
-        style={{ mixBlendMode: "difference" }}
+        className={`font-mono font-black leading-none tracking-tighter transition-all duration-500 ${getStatusColorClass()}`}
+        style={{ fontSize: 120, mixBlendMode: "difference" }}
       >
         {formatTime(displaySeconds)}
       </div>

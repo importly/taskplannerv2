@@ -1,19 +1,40 @@
+import { useEffect, useState } from "react";
 import { useTimerStore } from "../../stores/timerStore";
 
 const TARGET_SECONDS = 1500; // 25 mins
 
 export const FloodBar = () => {
-  const { status, focusElapsedSeconds } = useTimerStore();
+  const { status, startTime, focusElapsedSeconds } = useTimerStore();
+  const [progress, setProgress] = useState(0);
 
-  // Calculate progress percentage
-  const progress = Math.min((focusElapsedSeconds / TARGET_SECONDS) * 100, 100);
+  useEffect(() => {
+    let interval: number | undefined;
+
+    const updateProgress = () => {
+      let total = focusElapsedSeconds;
+      if (status === "ACTIVE" && startTime) {
+        total += (Date.now() - startTime) / 1000;
+      }
+      setProgress(Math.min((total / TARGET_SECONDS) * 100, 100));
+    };
+
+    updateProgress();
+
+    if (status === "ACTIVE") {
+      interval = window.setInterval(updateProgress, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [status, startTime, focusElapsedSeconds]);
 
   const getStatusColor = () => {
     switch (status) {
       case "ACTIVE":
         return "var(--color-accent)";
       case "PAUSED":
-        return "var(--color-muted)";
+        return "#1C1C1E";
       case "IDLE":
         return "transparent";
       default:
@@ -21,14 +42,30 @@ export const FloodBar = () => {
     }
   };
 
+  const getOpacity = () => {
+    if (status === "IDLE") return 0;
+    if (status === "PAUSED") return 0.4;
+    return 0.25;
+  };
+
   return (
     <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
       <div
-        className="absolute bottom-0 left-0 w-full transition-all duration-1000 ease-linear opacity-20"
+        className="absolute top-0 left-0 h-full transition-colors duration-800 ease-in-out"
         style={{
-          height: `${progress}%`,
+          width: `${progress}%`,
           backgroundColor: getStatusColor(),
-          filter: "blur(40px)",
+          opacity: getOpacity(),
+        }}
+      />
+      
+      {/* Ambient Glow */}
+      <div
+        className="absolute top-0 left-0 h-full transition-all duration-800 ease-in-out"
+        style={{
+          width: `${progress}%`,
+          boxShadow: status === "ACTIVE" ? `0 0 100px 20px var(--color-accent)` : "none",
+          opacity: 0.1,
         }}
       />
     </div>

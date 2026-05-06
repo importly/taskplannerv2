@@ -1,4 +1,28 @@
-use tauri::Manager;
+use tauri::{Manager, Emitter};
+
+#[tauri::command]
+async fn minimize_window(window: tauri::Window) -> Result<(), String> {
+    window.minimize().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn toggle_maximize_window(window: tauri::Window) -> Result<(), String> {
+    if window.is_maximized().map_err(|e| e.to_string())? {
+        window.unmaximize().map_err(|e| e.to_string())
+    } else {
+        window.maximize().map_err(|e| e.to_string())
+    }
+}
+
+#[tauri::command]
+async fn close_window(window: tauri::Window) -> Result<(), String> {
+    window.close().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn start_drag(window: tauri::Window) -> Result<(), String> {
+    window.start_dragging().map_err(|e| e.to_string())
+}
 
 #[tauri::command]
 async fn set_mini_player(window: tauri::Window, enabled: bool) -> Result<(), String> {
@@ -13,8 +37,8 @@ async fn set_mini_player(window: tauri::Window, enabled: bool) -> Result<(), Str
     } else {
         window
             .set_size(tauri::Size::Logical(tauri::LogicalSize {
-                width: 800.0,
-                height: 600.0,
+                width: 1100.0,
+                height: 720.0,
             }))
             .map_err(|e| e.to_string())?;
         window.set_always_on_top(false).map_err(|e| e.to_string())?;
@@ -29,7 +53,13 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![set_mini_player])
+        .invoke_handler(tauri::generate_handler![
+            set_mini_player,
+            minimize_window,
+            toggle_maximize_window,
+            close_window,
+            start_drag
+        ])
         .setup(|app| {
             let win = app.get_webview_window("main").unwrap();
             let win_clone = win.clone();

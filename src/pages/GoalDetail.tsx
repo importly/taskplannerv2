@@ -1,36 +1,27 @@
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
 } from "recharts";
-import { 
-  useGoal, 
-  useGoalStats, 
-  useNarrativeLogs, 
+import {
+  useGoal,
+  useGoalStats,
+  useNarrativeLogs,
   useGoalTasks,
   useUpdateGoalProgress,
   useArchiveGoal,
   useDeleteGoal,
-  useAddManualNarrativeLog
+  useAddManualNarrativeLog,
 } from "../db/goalHooks";
 import { useSessionStore } from "../stores/sessionStore";
 import { useTimerStore } from "../stores/timerStore";
-import { Button } from "../components/ui/button";
-import { 
-  MoreHorizontal, 
-  Play, 
-  Archive, 
-  Trash2, 
-  ChevronLeft,
-  Send,
-  Calendar
-} from "lucide-react";
+import { Play, Archive, Trash2, ChevronLeft, Send, Calendar, MoreHorizontal } from "lucide-react";
 
 interface GoalDetailProps {
   goalId: string;
@@ -56,8 +47,8 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
 
   if (goalLoading || !goal) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: "#E1FF00" }} />
       </div>
     );
   }
@@ -68,8 +59,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
   };
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    updateProgress.mutate({ id: goal.id, progressPercent: value });
+    updateProgress.mutate({ id: goal.id, progressPercent: parseInt(e.target.value) });
   };
 
   const handleSubmitLog = (e: React.FormEvent) => {
@@ -94,221 +84,380 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-bg text-white font-sans selection:bg-accent/30">
-      {/* Header */}
-      <header className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-10">
-        <div className="flex items-center gap-4">
-          <button 
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100vh - 44px)",
+        background: "#000",
+        color: "#fff",
+        fontFamily: "Inter, system-ui, sans-serif",
+      }}
+    >
+      {/* ── Header ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 24px",
+          height: 56,
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button
             onClick={onBack}
-            className="p-2 hover:bg-white/5 rounded-full transition-colors text-muted hover:text-white"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 32, height: 32, borderRadius: "50%",
+              background: "rgba(255,255,255,0.05)", border: "none", cursor: "pointer", color: "#8E8E93",
+            }}
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
           </button>
-          <div className="flex flex-col">
-            <nav className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted">
-              <span className="cursor-pointer hover:text-white" onClick={onBack}>Goals</span>
-              <span>/</span>
-              <span className="text-white/40">{goal.title}</span>
-            </nav>
-            <h1 className="text-xl font-bold tracking-tight">{goal.title}</h1>
+          <div>
+            <div
+              className="font-mono"
+              style={{ fontSize: 10, color: "#48484A", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}
+            >
+              Goals /
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+              {goal.title}
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button 
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button
             onClick={handleStartFocus}
-            className="bg-accent text-black hover:bg-accent/90 flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all hover:scale-105 active:scale-95"
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              background: "#E1FF00", color: "#000",
+              borderRadius: 20, padding: "7px 18px",
+              border: "none", cursor: "pointer",
+              fontSize: 13, fontWeight: 700,
+            }}
           >
-            <Play size={16} fill="currentColor" />
-            Start Focus Session
-          </Button>
+            <Play size={14} fill="currentColor" />
+            Start Focus
+          </button>
 
-          <div className="relative">
-            <button 
+          <div style={{ position: "relative" }}>
+            <button
               onClick={() => setShowActions(!showActions)}
-              className="p-2 hover:bg-white/5 rounded-full transition-colors text-muted hover:text-white"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 32, height: 32, borderRadius: "50%",
+                background: "rgba(255,255,255,0.05)", border: "none", cursor: "pointer", color: "#8E8E93",
+              }}
             >
-              <MoreHorizontal size={20} />
+              <MoreHorizontal size={16} />
             </button>
-            
             {showActions && (
               <>
-                <div 
-                  className="fixed inset-0 z-20" 
-                  onClick={() => setShowActions(false)}
-                />
-                <div className="absolute right-0 mt-2 w-48 bg-surface border border-white/10 rounded-xl shadow-2xl z-30 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-150">
-                  <button 
+                <div className="fixed inset-0 z-20" onClick={() => setShowActions(false)} />
+                <div
+                  className="z-30"
+                  style={{
+                    position: "absolute", right: 0, top: 40, width: 176,
+                    background: "#111", border: "1px solid rgba(255,255,255,0.10)",
+                    borderRadius: 12, overflow: "hidden", padding: "4px 0",
+                  }}
+                >
+                  <button
                     onClick={handleArchive}
-                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-muted hover:text-white hover:bg-white/5 transition-colors"
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      width: "100%", padding: "9px 16px",
+                      background: "transparent", border: "none", cursor: "pointer",
+                      fontSize: 13, color: "#8E8E93", textAlign: "left",
+                    }}
                   >
-                    <Archive size={16} />
-                    Archive Goal
+                    <Archive size={14} /> Archive Goal
                   </button>
-                  <button 
+                  <button
                     onClick={handleDelete}
-                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-danger/80 hover:text-danger hover:bg-danger/5 transition-colors"
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      width: "100%", padding: "9px 16px",
+                      background: "transparent", border: "none", cursor: "pointer",
+                      fontSize: 13, color: "#FF3B30", textAlign: "left",
+                    }}
                   >
-                    <Trash2 size={16} />
-                    Delete Goal
+                    <Trash2 size={14} /> Delete Goal
                   </button>
                 </div>
               </>
             )}
           </div>
         </div>
-      </header>
+      </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Pane (Narrative) */}
-        <div className="w-[60%] flex flex-col border-r border-white/5 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-12 py-8 space-y-12 scrollbar-thin">
-            {/* Description */}
-            <section className="space-y-4">
-              <h2 className="text-xs font-mono uppercase tracking-widest text-muted">Strategic Narrative</h2>
-              <div className="prose prose-invert prose-sm max-w-none">
-                <ReactMarkdown>
-                  {goal.description || "_No description provided._"}
-                </ReactMarkdown>
+      {/* ── Body: split panes ── */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+
+        {/* Left pane: Narrative + logs */}
+        <div
+          className="no-scrollbar"
+          style={{
+            width: "60%",
+            overflowY: "auto",
+            borderRight: "1px solid rgba(255,255,255,0.08)",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div style={{ flex: 1, padding: "36px 40px", display: "flex", flexDirection: "column", gap: 40 }}>
+
+            {/* Strategic Narrative */}
+            <section>
+              <div
+                className="font-mono"
+                style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93", marginBottom: 16 }}
+              >
+                Strategic Narrative
+              </div>
+              <div style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.75)" }}>
+                <ReactMarkdown>{goal.description || "_No description provided._"}</ReactMarkdown>
               </div>
             </section>
 
-            {/* Logs */}
-            <section className="space-y-6">
-              <h2 className="text-xs font-mono uppercase tracking-widest text-muted">Execution Logs</h2>
-              <div className="space-y-6 pb-12">
+            {/* Execution Logs */}
+            <section>
+              <div
+                className="font-mono"
+                style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93", marginBottom: 16 }}
+              >
+                Execution Logs
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                 {logs?.map((log) => (
-                  <div key={log.id} className="group relative pl-6 border-l border-white/10 space-y-2">
-                    <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-white/20 group-hover:bg-accent transition-colors" />
-                    <div className="flex items-center gap-3 text-[10px] font-mono text-muted uppercase tracking-wider">
-                      <span>{new Date(log.timestamp).toLocaleDateString()}</span>
-                      <span>•</span>
-                      <span>{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      {log.session_id && (
-                        <>
-                          <span>•</span>
-                          <span className="text-accent/60">Focus Session</span>
-                        </>
-                      )}
+                  <div
+                    key={log.id}
+                    style={{
+                      paddingLeft: 20,
+                      borderLeft: "1px solid rgba(255,255,255,0.10)",
+                      position: "relative",
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "absolute", left: -5, top: 6,
+                        width: 8, height: 8, borderRadius: "50%",
+                        background: "rgba(255,255,255,0.18)",
+                      }}
+                    />
+                    <div
+                      className="font-mono"
+                      style={{ fontSize: 10, color: "#48484A", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}
+                    >
+                      {new Date(log.timestamp).toLocaleDateString()} · {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      {log.session_id && <span style={{ color: "rgba(225,255,0,0.5)", marginLeft: 8 }}>Focus Session</span>}
                     </div>
-                    <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap">
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.80)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                       {log.content}
                     </p>
                   </div>
                 ))}
                 {(!logs || logs.length === 0) && (
-                  <p className="text-sm text-muted italic">No logs recorded yet.</p>
+                  <p style={{ fontSize: 13, color: "#48484A", fontStyle: "italic" }}>No logs recorded yet.</p>
                 )}
               </div>
             </section>
           </div>
 
-          {/* Manual Entry */}
-          <div className="p-8 border-t border-white/5 bg-black/40 backdrop-blur-sm">
-            <form onSubmit={handleSubmitLog} className="relative">
-              <textarea 
+          {/* Manual log entry — pinned bottom */}
+          <div
+            style={{
+              padding: "20px 40px 28px",
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(0,0,0,0.5)",
+              flexShrink: 0,
+            }}
+          >
+            <form onSubmit={handleSubmitLog} style={{ position: "relative" }}>
+              <textarea
                 value={manualLog}
                 onChange={(e) => setManualLog(e.target.value)}
                 placeholder="Log progress or reflections..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm text-white focus:outline-none focus:border-accent/50 transition-all resize-none min-h-[100px] pr-12"
+                rows={3}
+                style={{
+                  width: "100%",
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.20)",
+                  borderRadius: 14,
+                  padding: "14px 52px 14px 16px",
+                  fontSize: 13,
+                  color: "#fff",
+                  resize: "none",
+                  outline: "none",
+                  fontFamily: "inherit",
+                }}
               />
-              <button 
+              <button
                 type="submit"
                 disabled={!manualLog.trim()}
-                className="absolute right-4 bottom-4 p-2 bg-accent text-black rounded-xl disabled:opacity-30 disabled:grayscale transition-all hover:scale-105 active:scale-95"
+                style={{
+                  position: "absolute", right: 12, bottom: 12,
+                  width: 32, height: 32, borderRadius: 10,
+                  background: manualLog.trim() ? "#E1FF00" : "rgba(255,255,255,0.08)",
+                  color: manualLog.trim() ? "#000" : "#3A3A3C",
+                  border: "none", cursor: manualLog.trim() ? "pointer" : "default",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 150ms",
+                }}
               >
-                <Send size={18} />
+                <Send size={14} />
               </button>
             </form>
           </div>
         </div>
 
-        {/* Right Pane (Metrics) */}
-        <div className="w-[40%] overflow-y-auto bg-black/20 px-8 py-10 space-y-12 scrollbar-thin">
-          {/* Progress Slider */}
-          <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-mono uppercase tracking-widest text-muted">Progress</h2>
-              <span className="text-2xl font-bold font-mono text-accent">{goal.progress_percent}%</span>
+        {/* Right pane: Metrics */}
+        <div
+          className="no-scrollbar"
+          style={{ width: "40%", overflowY: "auto", padding: "36px 32px 80px" }}
+        >
+
+          {/* Progress */}
+          <section style={{ marginBottom: 40 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div
+                className="font-mono"
+                style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}
+              >
+                Progress
+              </div>
+              <span className="font-mono" style={{ fontSize: 24, fontWeight: 700, color: "#E1FF00" }}>
+                {goal.progress_percent}%
+              </span>
             </div>
-            
-            <div className="relative h-12 flex items-center">
-              <input 
-                type="range"
-                min="0"
-                max="100"
-                value={goal.progress_percent}
-                onChange={handleProgressChange}
-                className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-accent hover:accent-accent/80 transition-all"
-                style={{
-                  background: `linear-gradient(to right, var(--color-accent) ${goal.progress_percent}%, #333 ${goal.progress_percent}%)`
-                }}
-              />
-            </div>
-            <p className="text-[10px] text-muted text-center uppercase tracking-tighter">
-              Slide to manually adjust objective completion
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={goal.progress_percent}
+              onChange={handleProgressChange}
+              style={{
+                width: "100%", height: 6, borderRadius: 10,
+                appearance: "none", cursor: "pointer",
+                background: `linear-gradient(to right, #E1FF00 ${goal.progress_percent}%, #1E1E1E ${goal.progress_percent}%)`,
+                outline: "none",
+              }}
+            />
+            <p
+              className="font-mono"
+              style={{ fontSize: 10, color: "#3A3A3C", textAlign: "center", marginTop: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}
+            >
+              Slide to adjust completion
             </p>
           </section>
 
-          {/* Execution Velocity */}
-          <section className="space-y-6">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-muted">Execution Velocity</h2>
-            <div className="h-48 w-full font-mono text-[10px]">
+          {/* Execution Velocity chart */}
+          <section style={{ marginBottom: 40 }}>
+            <div
+              className="font-mono"
+              style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93", marginBottom: 16 }}
+            >
+              Execution Velocity
+            </div>
+            <div style={{ height: 180 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#666" 
-                    tickFormatter={(val) => val.split('-').slice(1).join('/')}
-                    fontSize={10}
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#3A3A3C"
+                    tickFormatter={(val) => val.split("-").slice(1).join("/")}
+                    fontSize={9}
+                    fontFamily="JetBrains Mono, monospace"
                     tickLine={false}
                     axisLine={false}
+                    tick={{ fill: "#48484A" }}
                   />
-                  <YAxis 
-                    stroke="#666" 
-                    fontSize={10} 
-                    tickLine={false} 
+                  <YAxis
+                    stroke="#3A3A3C"
+                    fontSize={9}
+                    fontFamily="JetBrains Mono, monospace"
+                    tickLine={false}
                     axisLine={false}
                     unit="m"
+                    tick={{ fill: "#48484A" }}
                   />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px', fontSize: '10px' }}
-                    cursor={{ fill: '#ffffff05' }}
+                  <Tooltip
+                    contentStyle={{
+                      background: "#111", border: "1px solid rgba(255,255,255,0.10)",
+                      borderRadius: 10, fontSize: 11, fontFamily: "JetBrains Mono, monospace",
+                      color: "#fff",
+                    }}
+                    cursor={{ fill: "rgba(255,255,255,0.03)" }}
                   />
-                  <Bar dataKey="total_minutes" fill="var(--color-accent)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total_minutes" fill="#E1FF00" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex justify-between text-[10px] font-mono text-muted uppercase">
+            <div
+              className="flex justify-between font-mono"
+              style={{ fontSize: 10, color: "#3A3A3C", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 10 }}
+            >
               <span>Past 14 Days</span>
               <span>Daily Focus Minutes</span>
             </div>
           </section>
 
           {/* Linked Tasks */}
-          <section className="space-y-6">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-muted">Linked Tasks</h2>
-            <div className="space-y-3">
+          <section>
+            <div
+              className="font-mono"
+              style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93", marginBottom: 16 }}
+            >
+              Linked Tasks
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {tasks?.map((task) => (
-                <div key={task.ms_task_id} className="p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors flex items-center justify-between group">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${task.status === 'completed' ? 'bg-green-500' : 'bg-accent/40'}`} />
-                    <span className={`text-sm ${task.status === 'completed' ? 'text-muted line-through' : 'text-white/90'}`}>
+                <div
+                  key={task.ms_task_id}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "12px 14px", borderRadius: 12,
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{
+                      width: 7, height: 7, borderRadius: "50%",
+                      background: task.status === "completed" ? "#30D158" : "rgba(225,255,0,0.4)",
+                      flexShrink: 0,
+                    }} />
+                    <span style={{
+                      fontSize: 13,
+                      color: task.status === "completed" ? "#48484A" : "rgba(255,255,255,0.85)",
+                      textDecoration: task.status === "completed" ? "line-through" : "none",
+                    }}>
                       {task.title}
                     </span>
                   </div>
                   {task.due_date && (
-                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted">
-                      <Calendar size={10} />
+                    <div className="font-mono" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#48484A" }}>
+                      <Calendar size={9} />
                       {new Date(task.due_date).toLocaleDateString()}
                     </div>
                   )}
                 </div>
               ))}
               {(!tasks || tasks.length === 0) && (
-                <div className="p-8 rounded-xl border border-dashed border-white/5 text-center">
-                  <p className="text-xs text-muted">No tasks linked to this goal.</p>
+                <div
+                  style={{
+                    padding: 24, borderRadius: 12,
+                    border: "1px dashed rgba(255,255,255,0.07)",
+                    textAlign: "center", fontSize: 12, color: "#3A3A3C",
+                  }}
+                >
+                  No tasks linked to this goal.
                 </div>
               )}
             </div>

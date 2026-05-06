@@ -1,13 +1,18 @@
 import React, { useState } from "react";
-import { 
-  useGoalsWithStats, 
-  useArchivedGoalsWithStats, 
-  useGlobalStats, 
-  useCreateGoal 
+import {
+  useGoalsWithStats,
+  useArchivedGoalsWithStats,
+  useGlobalStats,
+  useCreateGoal,
 } from "../db/goalHooks";
 import { GoalCard } from "../components/goals/GoalCard";
-import { Button } from "../components/ui/button";
 import { GoalDetail } from "./GoalDetail";
+
+function formatWeeklyFocus(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h}:${m.toString().padStart(2, "0")}`;
+}
 
 export default function GoalsDashboard() {
   const { data: activeGoals, isLoading: activeLoading } = useGoalsWithStats();
@@ -24,161 +29,252 @@ export default function GoalsDashboard() {
   const handleCreateGoal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGoalTitle.trim()) return;
-
     await createGoalMutation.mutateAsync({
       title: newGoalTitle,
       description: newGoalDescription || null,
     });
-
     setNewGoalTitle("");
     setNewGoalDescription("");
     setIsModalOpen(false);
   };
 
-  const focusHoursThisWeek = ((globalStats?.focus_seconds_this_week || 0) / 3600).toFixed(1);
-
   if (selectedGoalId) {
     return <GoalDetail goalId={selectedGoalId} onBack={() => setSelectedGoalId(null)} />;
   }
 
+  const weeklyFocus = formatWeeklyFocus(globalStats?.focus_seconds_this_week || 0);
+  const activeCount = activeGoals?.length || 0;
+
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-12 min-h-screen pb-24">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-bold tracking-tight text-white">Goals</h1>
-        <Button 
+    <div className="flex flex-col min-h-full">
+      {/* ── Header zone ── */}
+      <div
+        className="flex justify-between items-end"
+        style={{ padding: "36px 40px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+      >
+        <div>
+          <div className="text-[26px] font-bold tracking-[-0.025em] text-white">
+            Wildly Important Goals
+          </div>
+          <div className="text-[12px] mt-1" style={{ color: "#48484A" }}>
+            Separate from the whirlwind. What actually moves the needle.
+          </div>
+        </div>
+        <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-accent text-black hover:bg-accent/90"
+          className="font-semibold text-[13px] text-white transition-opacity hover:opacity-80"
+          style={{
+            background: "#0A84FF",
+            borderRadius: 20,
+            padding: "8px 18px",
+            border: "none",
+            cursor: "pointer",
+          }}
         >
           + New Goal
-        </Button>
+        </button>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatItem 
-          label="Focus this week" 
-          value={`${focusHoursThisWeek}h`} 
-          subValue="Current streak: --" 
-        />
-        <StatItem 
-          label="Active Goals" 
-          value={activeGoals?.length.toString() || "0"} 
-          subValue="Focused priorities" 
-        />
-        <StatItem 
-          label="Total XP" 
-          value="--" 
-          subValue="Coming in Sub-project 5" 
-        />
+      {/* ── Stats strip zone ── */}
+      <div
+        className="flex items-center"
+        style={{ padding: "28px 40px", borderBottom: "1px solid rgba(255,255,255,0.08)", gap: 40 }}
+      >
+        <StripStat value={weeklyFocus} label="Focus This Week" />
+        <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
+        <StripStat value="--" label="Day Streak" />
+        <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
+        <StripStat value={String(activeCount)} label="Active Goals" />
       </div>
 
-      {/* Active Goals Grid */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white/90">Active Focus</h2>
+      {/* ── Active goals grid zone ── */}
+      <div style={{ padding: "36px 40px 40px" }}>
+        <div
+          className="text-[10px] font-semibold uppercase"
+          style={{ letterSpacing: "0.1em", color: "#3A3A3C", marginBottom: 14 }}
+        >
+          Active
         </div>
 
         {activeLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[1, 2].map(i => <div key={i} className="h-32 rounded-xl bg-white/2 animate-pulse" />)}
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="rounded-2xl animate-pulse"
+                style={{ height: 130, background: "rgba(255,255,255,0.02)" }}
+              />
+            ))}
           </div>
-        ) : (activeGoals?.length || 0) > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {activeGoals?.map((goal) => (
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {activeGoals?.map((goal, i) => (
               <GoalCard
                 key={goal.id}
                 title={goal.title}
                 progress={goal.progress_percent}
                 totalFocusTimeSeconds={goal.total_focus_seconds}
+                colorIndex={i}
                 onClick={() => setSelectedGoalId(goal.id)}
               />
             ))}
-          </div>
-        ) : (
-          <div className="p-12 rounded-xl border border-dashed border-white/10 text-center space-y-4">
-            <p className="text-muted">No active goals found. Start by creating your first objective.</p>
-            <Button variant="outline" onClick={() => setIsModalOpen(true)}>Create Goal</Button>
+
+            {/* New goal placeholder card */}
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center justify-center gap-2 rounded-[16px] text-[13px] font-medium transition-all duration-200 min-h-[130px] border border-dashed border-white/[0.09] bg-transparent text-[#3A3A3C] cursor-pointer hover:border-white/[0.18] hover:bg-white/[0.02] hover:text-[#8E8E93] p-5 w-full"
+            >
+              <div className="flex items-center justify-center text-[10px] w-4 h-4 rounded-full border-[1.5px] border-dashed border-inherit text-inherit shrink-0">
+                +
+              </div>
+              New Wildly Important Goal
+            </button>
           </div>
         )}
-      </section>
+      </div>
 
-      {/* Archived Section */}
+      {/* ── Archived section ── */}
       {(archivedGoals?.length || 0) > 0 && (
-        <section className="pt-8 border-t border-white/5 space-y-6">
-          <button 
+        <div style={{ padding: "0 40px 40px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+          <button
             onClick={() => setShowArchived(!showArchived)}
-            className="text-sm font-medium text-muted hover:text-white transition-colors flex items-center gap-2"
+            className="flex items-center gap-2 transition-colors"
+            style={{
+              marginTop: 28,
+              marginBottom: 14,
+              fontSize: 12,
+              fontWeight: 500,
+              color: "#48484A",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
           >
             {showArchived ? "Hide Archived" : `Show Archived (${archivedGoals?.length})`}
-            <svg 
+            <svg
               className={`transition-transform duration-200 ${showArchived ? "rotate-180" : ""}`}
-              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <path d="m6 9 6 6 6-6"/>
+              <path d="m6 9 6 6 6-6" />
             </svg>
           </button>
 
           {showArchived && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-60">
-              {archivedGoals?.map((goal) => (
+            <div className="grid grid-cols-2 gap-3">
+              {archivedGoals?.map((goal, i) => (
                 <GoalCard
                   key={goal.id}
                   title={goal.title}
                   progress={goal.progress_percent}
                   totalFocusTimeSeconds={goal.total_focus_seconds}
+                  colorIndex={i}
                   onClick={() => {}}
                   isArchived
                 />
               ))}
             </div>
           )}
-        </section>
+        </div>
       )}
 
-      {/* New Goal Modal */}
+      {/* ── New Goal Modal ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-[#111] border border-white/10 rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold mb-6">New Strategic Goal</h3>
-            <form onSubmit={handleCreateGoal} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-mono uppercase tracking-wider text-muted">Title</label>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(8px)", padding: 16 }}
+        >
+          <div
+            className="w-full"
+            style={{
+              maxWidth: 440,
+              background: "#111",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 20,
+              padding: 24,
+            }}
+          >
+            <div className="text-[18px] font-bold text-white mb-6">New Strategic Goal</div>
+            <form onSubmit={handleCreateGoal} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label
+                  className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em]"
+                  style={{ color: "#3A3A3C" }}
+                >
+                  Title
+                </label>
                 <input
                   autoFocus
                   type="text"
                   value={newGoalTitle}
                   onChange={(e) => setNewGoalTitle(e.target.value)}
                   placeholder="e.g., Master Rust Systems Programming"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-accent/50 transition-colors"
+                  className="text-white text-[14px] transition-colors focus:outline-none"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    borderRadius: 10,
+                    padding: "9px 14px",
+                  }}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-mono uppercase tracking-wider text-muted">Description (Optional)</label>
+              <div className="flex flex-col gap-1.5">
+                <label
+                  className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em]"
+                  style={{ color: "#3A3A3C" }}
+                >
+                  Description (Optional)
+                </label>
                 <textarea
                   value={newGoalDescription}
                   onChange={(e) => setNewGoalDescription(e.target.value)}
                   placeholder="Define the success criteria..."
                   rows={3}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-accent/50 transition-colors resize-none"
+                  className="text-white text-[14px] resize-none transition-colors focus:outline-none"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    borderRadius: 10,
+                    padding: "9px 14px",
+                  }}
                 />
               </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button 
+              <div className="flex justify-end gap-3 mt-2">
+                <button
                   type="button"
-                  variant="ghost" 
                   onClick={() => setIsModalOpen(false)}
-                  className="text-muted hover:text-white"
+                  className="text-[13px] font-medium transition-colors"
+                  style={{
+                    color: "#48484A",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "8px 14px",
+                  }}
                 >
                   Cancel
-                </Button>
-                <Button 
+                </button>
+                <button
                   type="submit"
                   disabled={!newGoalTitle.trim() || createGoalMutation.isPending}
-                  className="bg-accent text-black hover:bg-accent/90 px-8"
+                  className="text-[13px] font-semibold text-white transition-opacity disabled:opacity-40"
+                  style={{
+                    background: "#0A84FF",
+                    borderRadius: 20,
+                    padding: "8px 24px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
                 >
                   {createGoalMutation.isPending ? "Creating..." : "Create Goal"}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
@@ -188,12 +284,21 @@ export default function GoalsDashboard() {
   );
 }
 
-function StatItem({ label, value, subValue }: { label: string; value: string; subValue: string }) {
+function StripStat({ value, label }: { value: string; label: string }) {
   return (
-    <div className="p-6 rounded-xl bg-white/4 border border-white/8 space-y-1">
-      <p className="text-xs font-mono uppercase tracking-widest text-muted">{label}</p>
-      <p className="text-3xl font-bold tracking-tight text-white">{value}</p>
-      <p className="text-[10px] text-muted/60">{subValue}</p>
+    <div>
+      <div
+        className="font-mono font-bold"
+        style={{ fontSize: 28, letterSpacing: "-0.03em", color: "#fff" }}
+      >
+        {value}
+      </div>
+      <div
+        className="font-semibold uppercase"
+        style={{ fontSize: 10, letterSpacing: "0.08em", color: "#3A3A3C", marginTop: 3 }}
+      >
+        {label}
+      </div>
     </div>
   );
 }

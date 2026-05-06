@@ -1,17 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initDb } from "./db";
 import { useEnforcer } from "./hooks/useEnforcer";
 import { ReflectionModal } from "./components/timer/ReflectionModal";
 import { SettingsModal } from "./components/settings/SettingsModal";
-import { Settings } from "lucide-react";
+import { Settings, Minus, Square, X } from "lucide-react";
 import CommandCenter from "./pages/CommandCenter";
 import GoalsDashboard from "./pages/GoalsDashboard";
 import Whirlwind from "./pages/Whirlwind";
 import Stats from "./pages/Stats";
 
 const queryClient = new QueryClient();
-
 type Page = "command-center" | "goals" | "whirlwind" | "stats";
 
 function AppShell() {
@@ -20,12 +20,25 @@ function AppShell() {
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const dragRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     initDb()
       .then(() => setDbReady(true))
       .catch((e: unknown) => setDbError(String(e)));
   }, []);
+
+  // Wire drag after nav mounts
+  useEffect(() => {
+    if (!dbReady) return;
+    const el = dragRef.current;
+    if (!el) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.buttons === 1) invoke("start_drag");
+    };
+    el.addEventListener("mousedown", onMouseDown);
+    return () => el.removeEventListener("mousedown", onMouseDown);
+  }, [dbReady]);
 
   if (dbError) {
     return (
@@ -38,67 +51,80 @@ function AppShell() {
   if (!dbReady) return null;
 
   return (
-    <div className="flex h-screen bg-[#000000] text-white overflow-hidden font-sans">
-      <nav className="flex flex-col gap-2 p-6 border-r border-white/5 min-w-[160px] bg-[#050505]">
-        <div className="mb-8 px-2">
-          <div className="text-accent font-bold tracking-tighter text-xl">PROXIMA</div>
-          <div className="text-[10px] text-muted font-mono uppercase tracking-[0.2em]">v2.0.0-alpha</div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#000", color: "#fff", overflow: "hidden", fontFamily: "Inter, system-ui, sans-serif" }}>
+      {/* Titlebar */}
+      <nav style={{ display: "flex", alignItems: "center", height: 44, padding: "0 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0, gap: 6 }}>
+        <div style={{ display: "flex", gap: 2 }}>
+          {(["command-center", "goals", "stats", "whirlwind"] as Page[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPage(p)}
+              style={{
+                padding: "4px 10px",
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 500,
+                background: page === p ? "#1C1C1E" : "transparent",
+                color: page === p ? "#fff" : "rgba(255,255,255,0.4)",
+                border: "none",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {p === "command-center" ? "Focus" : p.charAt(0).toUpperCase() + p.slice(1)}
+            </button>
+          ))}
         </div>
 
-        <NavButton 
-          active={page === "command-center"} 
-          onClick={() => setPage("command-center")}
-          label="Command"
-        />
-        <NavButton 
-          active={page === "goals"} 
-          onClick={() => setPage("goals")}
-          label="Strategic Goals"
-        />
-        <NavButton 
-          active={page === "whirlwind"} 
-          onClick={() => setPage("whirlwind")}
-          label="Whirlwind"
-        />
-        <NavButton 
-          active={page === "stats"} 
-          onClick={() => setPage("stats")}
-          label="Player Stats"
-        />
+        {/* Drag zone */}
+        <div ref={dragRef} style={{ flex: 1, alignSelf: "stretch", cursor: "grab" }} />
 
-        <div className="mt-auto pt-6 border-t border-white/5">
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center gap-3 px-4 py-3 w-full text-muted hover:text-white hover:bg-white/5 rounded-xl transition-all group"
-          >
-            <Settings size={18} className="group-hover:rotate-90 transition-transform duration-500" />
-            <span className="text-sm font-medium">Settings</span>
-          </button>
+        {/* Settings */}
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          style={{ padding: 6, color: "rgba(255,255,255,0.35)", background: "none", border: "none", cursor: "pointer", borderRadius: 6, display: "flex", alignItems: "center" }}
+        >
+          <Settings size={15} />
+        </button>
+
+        {/* Window controls */}
+        <div style={{ display: "flex", gap: 2, marginLeft: 4 }}>
+          <WinBtn icon={<Minus size={11} />} title="Minimize" onClick={() => invoke("minimize_window")} />
+          <WinBtn icon={<Square size={11} />} title="Maximize" onClick={() => invoke("toggle_maximize_window")} />
+          <WinBtn icon={<X size={11} />} title="Close" onClick={() => invoke("close_window")} danger />
         </div>
       </nav>
-      <main className="flex-1 overflow-auto bg-[#000000]">
+
+      <main className="no-scrollbar" style={{ flex: 1, overflow: page === "command-center" ? "hidden" : "auto", background: "#000", padding: 0 }}>
         {page === "command-center" && <CommandCenter />}
         {page === "goals" && <GoalsDashboard />}
         {page === "whirlwind" && <Whirlwind />}
         {page === "stats" && <Stats />}
       </main>
+
       <ReflectionModal />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }
 
-function NavButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+function WinBtn({ icon, onClick, danger, title }: { icon: React.ReactNode; onClick: () => void; danger?: boolean; title?: string }) {
+  const [hov, setHov] = useState(false);
   return (
     <button
+      title={title}
       onClick={onClick}
-      className={`px-4 py-2 text-left rounded-lg transition-all duration-200 text-sm font-medium
-        ${active 
-          ? "bg-accent/10 text-accent border border-accent/20 shadow-[0_0_15px_rgba(225,255,0,0.1)]" 
-          : "text-muted hover:text-white hover:bg-white/5 border border-transparent"
-        }`}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        width: 28, height: 28, borderRadius: 6,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: hov ? (danger ? "rgba(255,59,48,0.2)" : "rgba(255,255,255,0.08)") : "transparent",
+        color: hov ? (danger ? "#FF3B30" : "#fff") : "rgba(255,255,255,0.25)",
+        border: "none", cursor: "pointer",
+      }}
     >
-      {label}
+      {icon}
     </button>
   );
 }
