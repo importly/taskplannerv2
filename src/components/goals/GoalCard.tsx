@@ -20,13 +20,10 @@ export function GoalCard({ title, progress, totalFocusTimeSeconds, colorIndex, o
       className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[16px] cursor-pointer transition-all duration-200 hover:bg-white/10 hover:border-white/20 flex flex-col justify-between w-full"
       style={{ padding: "14px 14px 14px 14px", minHeight: 150 }}
     >
-      {/* Top Row: Title & Badge */}
-      <div className="flex justify-between items-start gap-3">
+      {/* Top: Title */}
+      <div style={{ gap: 12 }}>
         <div className="text-[16px] font-semibold text-white/90 tracking-[-0.01em] leading-snug line-clamp-2">
           {title}
-        </div>
-        <div className="font-mono text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/10 text-white/50 border border-white/10 whitespace-nowrap shrink-0 uppercase">
-          Systems
         </div>
       </div>
 
@@ -36,8 +33,8 @@ export function GoalCard({ title, progress, totalFocusTimeSeconds, colorIndex, o
       </div>
 
       {/* Progress Section */}
-      <div className="mt-auto">
-        <div className="flex justify-between items-end mb-1.5">
+      <div style={{ marginTop: "auto" }}>
+        <div className="flex justify-between items-end" style={{ marginBottom: 6 }}>
           <span className="text-[11px] text-[#3A3A3C] font-bold tracking-[0.08em] uppercase">
             Progress
           </span>

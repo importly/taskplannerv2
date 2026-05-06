@@ -7,12 +7,12 @@ export const HeatmapStrip = () => {
   const { data: dailyFocus = [] } = useDailyFocusMinutes(days);
 
   const getIntensityTier = (mins: number) => {
-    if (mins <= 0) return "bg-white/[0.02] border-white/[0.05]";
-    if (mins < 30) return "bg-[#E1FF00]/20 border-[#E1FF00]/10";
-    if (mins < 60) return "bg-[#E1FF00]/40 border-[#E1FF00]/20";
-    if (mins < 90) return "bg-[#E1FF00]/60 border-[#E1FF00]/40";
-    if (mins < 120) return "bg-[#E1FF00]/80 border-[#E1FF00]/60";
-    return "bg-[#E1FF00] border-[#E1FF00]";
+    if (mins <= 0) return { background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.05)" };
+    if (mins < 30) return { background: "rgba(10,132,255,0.2)", borderColor: "rgba(10,132,255,0.1)" };
+    if (mins < 60) return { background: "rgba(10,132,255,0.4)", borderColor: "rgba(10,132,255,0.2)" };
+    if (mins < 90) return { background: "rgba(10,132,255,0.6)", borderColor: "rgba(10,132,255,0.4)" };
+    if (mins < 120) return { background: "rgba(10,132,255,0.8)", borderColor: "rgba(10,132,255,0.6)" };
+    return { background: "#0A84FF", borderColor: "#0A84FF" };
   };
 
   const minutesMap = useMemo(() => {
@@ -30,11 +30,12 @@ export const HeatmapStrip = () => {
   });
 
   return (
-    <div className="w-full h-full flex items-center justify-end gap-[4px] overflow-hidden group">
+    <div className="w-full h-full flex items-center justify-end overflow-hidden group" style={{ gap: 4 }}>
       {cells.map((cell, i) => (
         <div
           key={i}
-          className={`w-[12px] h-[12px] rounded-[3px] shrink-0 border transition-all duration-300 hover:scale-125 ${getIntensityTier(cell.mins)}`}
+          className="shrink-0 border transition-all duration-300 hover:scale-125"
+          style={{ width: 12, height: 12, borderRadius: 3, ...getIntensityTier(cell.mins) }}
           title={`${cell.date}: ${Math.floor(cell.mins)} mins`}
         />
       ))}

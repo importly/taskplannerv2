@@ -5,6 +5,7 @@ import {
   useGlobalStats,
   useCreateGoal,
 } from "../db/goalHooks";
+import { useStreak } from "../db/gamificationHooks";
 import { GoalCard } from "../components/goals/GoalCard";
 import { GoalDetail } from "./GoalDetail";
 
@@ -18,6 +19,7 @@ export default function GoalsDashboard() {
   const { data: activeGoals, isLoading: activeLoading } = useGoalsWithStats();
   const { data: archivedGoals } = useArchivedGoalsWithStats();
   const { data: globalStats } = useGlobalStats();
+  const { data: streak = 0 } = useStreak();
   const createGoalMutation = useCreateGoal();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,7 +58,7 @@ export default function GoalsDashboard() {
           <div className="text-[30px] font-bold tracking-[-0.025em] text-white">
             Goals
           </div>
-          <div className="text-[14px] mt-1" style={{ color: "#48484A" }}>
+          <div className="text-[14px]" style={{ marginTop: "4px", color: "#48484A" }}>
             Separate from the whirlwind. What actually moves the needle.
           </div>
         </div>
@@ -82,7 +84,7 @@ export default function GoalsDashboard() {
       >
         <StripStat value={weeklyFocus} label="Focus This Week" />
         <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
-        <StripStat value="--" label="Day Streak" />
+        <StripStat value={String(streak)} label="Day Streak" />
         <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
         <StripStat value={String(activeCount)} label="Active Goals" />
       </div>
@@ -97,7 +99,7 @@ export default function GoalsDashboard() {
         </div>
 
         {activeLoading ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2" style={{ gap: "12px" }}>
             {[1, 2].map((i) => (
               <div
                 key={i}
@@ -107,7 +109,7 @@ export default function GoalsDashboard() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 items-start">
+          <div className="grid grid-cols-2 items-start" style={{ gap: "12px" }}>
             {activeGoals?.map((goal, i) => (
               <GoalCard
                 key={goal.id}
@@ -122,8 +124,8 @@ export default function GoalsDashboard() {
             {/* New goal placeholder card */}
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center justify-center gap-2 rounded-[16px] text-[14px] font-medium transition-all duration-200 border border-dashed border-white/10 bg-transparent text-[#48484A] cursor-pointer hover:border-white/20 hover:bg-white/5 hover:text-[#8E8E93] w-full"
-              style={{ minHeight: 150, padding: "14px" }}
+              className="flex items-center justify-center rounded-[16px] text-[14px] font-medium transition-all duration-200 border border-dashed border-white/10 bg-transparent text-[#48484A] cursor-pointer hover:border-white/20 hover:bg-white/5 hover:text-[#8E8E93] w-full"
+              style={{ minHeight: 150, padding: "14px", gap: "8px" }}
             >
               <div className="flex items-center justify-center text-[12px] w-5 h-5 rounded-full border-[1.5px] border-dashed border-inherit text-inherit shrink-0">
                 +
@@ -139,7 +141,7 @@ export default function GoalsDashboard() {
         <div style={{ padding: "0 40px 40px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <button
             onClick={() => setShowArchived(!showArchived)}
-            className="flex items-center gap-2 transition-colors"
+            className="flex items-center transition-colors"
             style={{
               marginTop: 28,
               marginBottom: 14,
@@ -150,6 +152,7 @@ export default function GoalsDashboard() {
               border: "none",
               cursor: "pointer",
               padding: 0,
+              gap: "8px",
             }}
           >
             {showArchived ? "Hide Archived" : `Show Archived (${archivedGoals?.length})`}
@@ -169,7 +172,7 @@ export default function GoalsDashboard() {
           </button>
 
           {showArchived && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2" style={{ gap: "12px" }}>
               {archivedGoals?.map((goal, i) => (
                 <GoalCard
                   key={goal.id}
@@ -202,9 +205,9 @@ export default function GoalsDashboard() {
               padding: 24,
             }}
           >
-            <div className="text-[18px] font-bold text-white mb-6">New Strategic Goal</div>
-            <form onSubmit={handleCreateGoal} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
+            <div className="text-[18px] font-bold text-white" style={{ marginBottom: "24px" }}>New Strategic Goal</div>
+            <form onSubmit={handleCreateGoal} className="flex flex-col" style={{ gap: "16px" }}>
+              <div className="flex flex-col" style={{ gap: "6px" }}>
                 <label
                   className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em]"
                   style={{ color: "#3A3A3C" }}
@@ -226,7 +229,7 @@ export default function GoalsDashboard() {
                   }}
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col" style={{ gap: "6px" }}>
                 <label
                   className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em]"
                   style={{ color: "#3A3A3C" }}
@@ -247,7 +250,7 @@ export default function GoalsDashboard() {
                   }}
                 />
               </div>
-              <div className="flex justify-end gap-3 mt-2">
+              <div className="flex justify-end" style={{ gap: "12px", marginTop: "8px" }}>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

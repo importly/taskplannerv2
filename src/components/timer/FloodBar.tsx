@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useTimerStore } from "../../stores/timerStore";
 
-const TARGET_SECONDS = 1500; // 25 mins
-
 export const FloodBar = () => {
-  const { status, startTime, focusElapsedSeconds } = useTimerStore();
+  const { status, startTime, focusElapsedSeconds, targetMinutes } = useTimerStore();
+  const TARGET_SECONDS = targetMinutes * 60;
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {

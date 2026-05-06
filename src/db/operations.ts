@@ -11,11 +11,13 @@ export async function saveFocusSession() {
   const timer = useTimerStore.getState();
   const session = useSessionStore.getState();
 
-  // If start time is missing, we use current time as fallback, 
-  // though start should always be set for an ACTIVE -> STOPPED transition.
-  const sessionStartTime = timer.startTime || Date.now();
+  // startTime is null by the time we reach STOPPED (stop() clears it).
+  // Reconstruct the real start from: now - focusElapsed - breakElapsed.
+  const now = Date.now();
+  const totalElapsedMs = (timer.focusElapsedSeconds + timer.breakElapsedSeconds) * 1000;
+  const sessionStartTime = now - totalElapsedMs;
   const startTimeStr = new Date(sessionStartTime).toISOString();
-  const endTimeStr = new Date().toISOString();
+  const endTimeStr = new Date(now).toISOString();
   const sessionId = crypto.randomUUID();
 
   await db.transaction().execute(async (trx) => {

@@ -36,6 +36,8 @@
     background: #0A0A0A;
     color: #ffffff;
     font-family: "Inter", system-ui, sans-serif;
+    overscroll-behavior: none;
+    overflow: hidden;
   }
 }
 
@@ -152,6 +154,24 @@
 }
 
 @layer utilities {
+  /* Rolling digit animations — countdown ticks down, scroll-up ticks up */
+  @keyframes roll-in-down {
+    from { transform: translateY(-110%); opacity: 0; filter: blur(3px); }
+    to   { transform: translateY(0);     opacity: 1; filter: blur(0);   }
+  }
+  @keyframes roll-out-down {
+    from { transform: translateY(0);     opacity: 1; filter: blur(0);   }
+    to   { transform: translateY(110%);  opacity: 0; filter: blur(3px); }
+  }
+  @keyframes roll-in-up {
+    from { transform: translateY(110%);  opacity: 0; filter: blur(3px); }
+    to   { transform: translateY(0);     opacity: 1; filter: blur(0);   }
+  }
+  @keyframes roll-out-up {
+    from { transform: translateY(0);      opacity: 1; filter: blur(0);   }
+    to   { transform: translateY(-110%);  opacity: 0; filter: blur(3px); }
+  }
+
   .glass-surface {
     background: rgba(255, 255, 255, 0.02);
     backdrop-filter: blur(12px);

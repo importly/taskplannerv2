@@ -121,7 +121,15 @@ export default function Whirlwind() {
       ) : lists.length === 0 ? (
         <div style={{ padding: "40px 0", color: "#3A3A3C", fontSize: 12 }}>No task lists found.</div>
       ) : (
-        lists.map(list => {
+        [...lists]
+          .sort((a, b) => {
+            const aTasksCount = (groupedTasks[a.id!] || []).length;
+            const bTasksCount = (groupedTasks[b.id!] || []).length;
+            if (aTasksCount > 0 && bTasksCount === 0) return -1;
+            if (bTasksCount > 0 && aTasksCount === 0) return 1;
+            return 0;
+          })
+          .map(list => {
           const tasks = groupedTasks[list.id!] || [];
           return (
             <div key={list.id} style={{ marginBottom: 24 }}>

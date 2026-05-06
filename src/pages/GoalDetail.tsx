@@ -41,6 +41,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
 
   const setSessionGoal = useSessionStore((state) => state.setGoal);
   const startTimer = useTimerStore((state) => state.start);
+  const timerStatus = useTimerStore((state) => state.status);
 
   const [manualLog, setManualLog] = useState("");
   const [showActions, setShowActions] = useState(false);
@@ -56,6 +57,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
   const handleStartFocus = () => {
     setSessionGoal(goal.id);
     startTimer();
+    onBack(); // Return so user can navigate to Command Center to see the timer
   };
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,19 +133,21 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button
-            onClick={handleStartFocus}
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              background: "#E1FF00", color: "#000",
-              borderRadius: 20, padding: "7px 18px",
-              border: "none", cursor: "pointer",
-              fontSize: 13, fontWeight: 700,
-            }}
-          >
-            <Play size={14} fill="currentColor" />
-            Start Focus
-          </button>
+          {timerStatus === "IDLE" && (
+            <button
+              onClick={handleStartFocus}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                background: "#E1FF00", color: "#000",
+                borderRadius: 20, padding: "7px 18px",
+                border: "none", cursor: "pointer",
+                fontSize: 13, fontWeight: 700,
+              }}
+            >
+              <Play size={14} fill="currentColor" />
+              Start Focus
+            </button>
+          )}
 
           <div style={{ position: "relative" }}>
             <button

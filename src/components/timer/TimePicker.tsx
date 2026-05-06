@@ -34,10 +34,11 @@ export function TimePicker() {
 
   return (
     <div className="relative flex flex-col items-center">
-      <div className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">Duration</div>
+      <div className="text-xs font-bold text-white/40 uppercase tracking-widest" style={{ marginBottom: 12 }}>Duration</div>
       <div 
-        className="relative h-[40vh] w-[140px] overflow-hidden bg-white/[0.03] border border-white/10 rounded-3xl group transition-colors hover:bg-white/[0.05] hover:border-white/20" 
+        className="relative h-[40vh] w-[140px] overflow-hidden border border-white/10 rounded-3xl group transition-colors hover:bg-white/5 hover:border-white/20" 
         style={{ 
+          background: "rgba(255,255,255,0.03)",
           maskImage: "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)",
           WebkitMaskImage: "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)"
         }}
@@ -68,7 +69,7 @@ export function TimePicker() {
       </div>
       
       {/* Scroll affordance dots */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity" style={{ gap: 6 }}>
         <div className="w-1 h-1 rounded-full bg-white/20" />
         <div className="w-1 h-1 rounded-full bg-white/40" />
         <div className="w-1 h-1 rounded-full bg-white/20" />

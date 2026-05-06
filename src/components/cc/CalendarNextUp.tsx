@@ -1,5 +1,5 @@
 import { useGoogleCalendarAuth, useUpcomingEvents } from "../../db/calendarHooks";
-import { Button } from "../ui/button";
+
 
 export const CalendarNextUp = () => {
   const { isConnected, connect, isLoading: authLoading } = useGoogleCalendarAuth();
@@ -13,30 +13,29 @@ export const CalendarNextUp = () => {
 
   return (
     <div>
-      <div className="text-xs font-bold tracking-[0.12em] text-[#9A9A9C] uppercase mb-3">Next Up</div>
+      <div className="text-xs font-bold tracking-[0.12em] text-[#9A9A9C] uppercase" style={{ marginBottom: 12 }}>Next Up</div>
 
       {authLoading || eventsLoading ? (
-        <div className="flex flex-col gap-2 animate-pulse">
+        <div className="flex flex-col animate-pulse" style={{ gap: 8 }}>
           <div className="h-3 bg-white/10 rounded w-3/4" />
           <div className="h-3 bg-white/10 rounded w-full" />
         </div>
       ) : !isConnected ? (
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={connect}
-          className="text-xs uppercase tracking-widest font-bold hover:bg-white/10 w-full text-white/40 h-auto py-2 px-0 justify-start"
+          className="text-xs uppercase tracking-widest font-bold hover:bg-white/10 w-full text-white/40 justify-start border-none bg-transparent cursor-pointer"
+          style={{ padding: "8px 0" }}
         >
           Connect Calendar →
-        </Button>
+        </button>
       ) : events && events.length > 0 ? (
         <div className="flex flex-col">
           {events.slice(0, 3).map((event, i) => (
-            <div key={event.id || i} className="py-2 border-b border-white/[0.04] last:border-0">
+            <div key={event.id || i} className="border-b last:border-0" style={{ padding: "8px 0", borderColor: "rgba(255,255,255,0.04)" }}>
               <div className="text-sm font-mono text-[#48484A]">
                 {formatTime(event.start.dateTime)}
               </div>
-              <div className="text-base text-white/45 mt-1 truncate">
+              <div className="text-base text-white/45 truncate" style={{ marginTop: 4 }}>
                 {event.summary}
               </div>
             </div>

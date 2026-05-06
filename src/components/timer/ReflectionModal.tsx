@@ -1,13 +1,16 @@
 import { useTimerStore } from "../../stores/timerStore";
 import { useSessionStore } from "../../stores/sessionStore";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDb } from "../../db";
 import { saveFocusSession } from "../../db/operations";
+import { gamificationKeys } from "../../db/gamificationHooks";
+import { goalKeys } from "../../db/goalHooks";
 
 export const ReflectionModal = () => {
   const status = useTimerStore((state) => state.status);
   const commit = useTimerStore((state) => state.commit);
   const discardTimer = useTimerStore((state) => state.discard);
+  const queryClient = useQueryClient();
 
   const {
     selectedTagIds,
@@ -20,7 +23,7 @@ export const ReflectionModal = () => {
   } = useSessionStore();
 
   const { data: tags = [] } = useQuery({
-    queryKey: ["tags"],
+    queryKey: gamificationKeys.tags(),
     queryFn: async () => {
       const db = getDb();
       return await db.selectFrom("tags").selectAll().execute();
@@ -28,10 +31,10 @@ export const ReflectionModal = () => {
   });
 
   const { data: goals = [] } = useQuery({
-    queryKey: ["goals"],
+    queryKey: [...goalKeys.lists(), "reflection"],
     queryFn: async () => {
       const db = getDb();
-      return await db.selectFrom("goals").selectAll().execute();
+      return await db.selectFrom("goals").selectAll().where("archived_at", "is", null).execute();
     },
   });
 
@@ -42,6 +45,9 @@ export const ReflectionModal = () => {
       await saveFocusSession();
       commit();
       resetSession();
+      // Invalidate all caches that depend on session/XP/gamification data
+      queryClient.invalidateQueries({ queryKey: gamificationKeys.all });
+      queryClient.invalidateQueries({ queryKey: goalKeys.all });
     } catch (error) {
       console.error("Failed to save session", error);
     }

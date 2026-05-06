@@ -26,19 +26,28 @@ export const CompactWhirlwind = () => {
   };
 
   if (isLoading) {
-    return <div className="h-full w-full animate-pulse" />;
+    return (
+      <div className="flex flex-col h-full">
+        <div className="text-sm font-bold tracking-[0.12em] text-white/60 uppercase" style={{ marginBottom: 16 }}>Whirlwind</div>
+        <div className="flex flex-col gap-3 mt-2">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-6 w-full bg-white/5 animate-pulse rounded" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col h-full">
-      <div className="text-sm font-bold tracking-[0.12em] text-white/60 uppercase mb-4">Whirlwind</div>
+      <div className="text-sm font-bold tracking-[0.12em] text-white/60 uppercase" style={{ marginBottom: 16 }}>Whirlwind</div>
       <div className="flex flex-col">
         {sortedTasks.length > 0 ? (
           sortedTasks.map((task) => {
             const dueStatus = getDueStatus(task.due_date);
 
             return (
-              <div key={task.ms_task_id} className="flex items-center gap-3 py-2 border-b border-white/[0.03] last:border-0 group">
+              <div key={task.ms_task_id} className="flex items-center border-b last:border-0 group" style={{ gap: 12, padding: "8px 0", borderColor: "rgba(255,255,255,0.03)" }}>
                 <button 
                   onClick={() => completeTaskMutation.mutate({ taskId: task.ms_task_id, listId: task.list_id || "" })}
                   className="w-5 h-5 rounded-full border-[2px] border-white/30 shrink-0 hover:bg-white/20 transition-colors"
@@ -47,7 +56,7 @@ export const CompactWhirlwind = () => {
                   {task.title}
                 </div>
                 {dueStatus && (
-                  <div className={`text-xs font-mono px-2 py-0.5 rounded-full shrink-0 ${dueStatus.color}`}>
+                  <div className={`text-xs font-mono rounded-full shrink-0 ${dueStatus.color}`} style={{ padding: "2px 8px" }}>
                     {dueStatus.label}
                   </div>
                 )}
@@ -55,7 +64,7 @@ export const CompactWhirlwind = () => {
             );
           })
         ) : (
-          <div className="text-base text-white/50 italic py-2">No active tasks</div>
+          <div className="text-base text-white/50 italic" style={{ padding: "8px 0" }}>No active tasks</div>
         )}
       </div>
     </div>

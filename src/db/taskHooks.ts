@@ -36,11 +36,10 @@ export function useSyncTasks() {
 
 export function useCompleteTask() {
   const queryClient = useQueryClient();
-  const db = getDb();
-
   return useMutation({
     mutationFn: async ({ taskId, listId }: { taskId: string; listId: string }) => {
       await completeTask(listId, taskId);
+      const db = getDb();
       await db
         .deleteFrom("cached_tasks")
         .where("ms_task_id", "=", taskId)
@@ -69,8 +68,6 @@ export function useCompleteTask() {
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();
-  const db = getDb();
-
   return useMutation({
     mutationFn: async ({ 
       taskId, 
@@ -83,6 +80,7 @@ export function useUpdateTask() {
     }) => {
       await updateTask(listId, taskId, fields);
       
+      const db = getDb();
       const updateData: any = {};
       if (fields.title) updateData.title = fields.title;
       if (fields.dueDateTime) updateData.due_date = fields.dueDateTime.dateTime;
@@ -129,12 +127,11 @@ export function useUpdateTask() {
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
-  const db = getDb();
-
   return useMutation({
     mutationFn: async ({ listId, title }: { listId: string; title: string }) => {
       const newTask = await createTask(listId, title);
       
+      const db = getDb();
       await db
         .insertInto("cached_tasks")
         .values({
@@ -158,10 +155,9 @@ export function useCreateTask() {
 
 export function useLinkTaskToGoal() {
   const queryClient = useQueryClient();
-  const db = getDb();
-
   return useMutation({
     mutationFn: async ({ taskId, goalId }: { taskId: string; goalId: string | null }) => {
+      const db = getDb();
       await db
         .updateTable("cached_tasks")
         .set({ linked_goal_id: goalId })

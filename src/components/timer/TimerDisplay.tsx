@@ -71,7 +71,7 @@ export const TimerDisplay = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4">
+    <div className="flex flex-col items-center justify-center" style={{ gap: 16 }}>
       {/* State Label */}
       <div className={`text-xs font-black tracking-[0.3em] uppercase ${getStatusColorClass()}`}>
         {getStatusLabel()}
@@ -88,7 +88,7 @@ export const TimerDisplay = () => {
       {/* Penalty Info */}
       <div className="h-8">
         {penaltyCountdown !== null && (
-          <div className="flex items-center gap-2 text-danger animate-pulse">
+          <div className="flex items-center text-danger animate-pulse" style={{ gap: 8 }}>
             <AlertCircle size={16} />
             <span className="font-mono text-sm uppercase tracking-wider">Penalty in {penaltyCountdown}s</span>
           </div>
@@ -96,30 +96,33 @@ export const TimerDisplay = () => {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-6 mt-8">
+      <div className="flex items-center" style={{ gap: 24, marginTop: 32 }}>
         {status === "IDLE" && (
           <Button
             onClick={start}
-            className="bg-accent text-black hover:bg-accent/90 px-6 sm:px-10 py-6 sm:py-8 text-lg sm:text-xl font-black rounded-none transition-transform hover:scale-105"
+            className="bg-accent text-black hover:bg-accent/90 text-lg sm:text-xl font-black rounded-none transition-transform hover:scale-105"
+            style={{ padding: "24px 32px" }}
           >
             <Play size={24} fill="currentColor" className="mr-2" /> START
           </Button>
         )}
 
         {(status === "ACTIVE" || status === "PAUSED") && (
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center" style={{ gap: 16 }}>
             {status === "ACTIVE" ? (
               <Button
                 onClick={pause}
                 variant="outline"
-                className="border-white/10 text-white hover:bg-white/5 px-6 sm:px-8 py-6 sm:py-8 rounded-none"
+                className="border-white/10 text-white hover:bg-white/5 rounded-none"
+                style={{ padding: "24px 32px" }}
               >
                 <Pause size={24} fill="currentColor" />
               </Button>
             ) : (
               <Button
                 onClick={resume}
-                className="bg-accent text-black hover:bg-accent/90 px-6 sm:px-8 py-6 sm:py-8 rounded-none"
+                className="bg-accent text-black hover:bg-accent/90 rounded-none"
+                style={{ padding: "24px 32px" }}
               >
                 <Play size={24} fill="currentColor" />
               </Button>
@@ -128,7 +131,8 @@ export const TimerDisplay = () => {
             <Button
               onClick={stop}
               variant="destructive"
-              className="bg-danger hover:bg-danger/90 px-6 sm:px-8 py-6 sm:py-8 rounded-none"
+              className="bg-danger hover:bg-danger/90 rounded-none"
+              style={{ padding: "24px 32px" }}
             >
               <Square size={24} fill="currentColor" />
             </Button>
@@ -136,7 +140,8 @@ export const TimerDisplay = () => {
             <Button
               onClick={discard}
               variant="ghost"
-              className="text-muted hover:text-danger px-3 sm:px-4 py-6 sm:py-8 rounded-none ml-2 sm:ml-4"
+              className="text-muted hover:text-danger rounded-none"
+              style={{ padding: "24px 16px", marginLeft: 16 }}
             >
               <Trash2 size={20} />
             </Button>
