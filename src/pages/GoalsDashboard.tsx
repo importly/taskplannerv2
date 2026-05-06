@@ -54,7 +54,7 @@ export default function GoalsDashboard() {
       >
         <div>
           <div className="text-[30px] font-bold tracking-[-0.025em] text-white">
-            Wildly Important Goals
+            Goals
           </div>
           <div className="text-[14px] mt-1" style={{ color: "#48484A" }}>
             Separate from the whirlwind. What actually moves the needle.

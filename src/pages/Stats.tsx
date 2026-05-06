@@ -47,7 +47,6 @@ export default function Stats() {
         className="grid"
         style={{
           gridTemplateColumns: "1fr 1fr",
-          minHeight: 420,
           borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >

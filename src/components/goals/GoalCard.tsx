@@ -45,7 +45,7 @@ export function GoalCard({ title, progress, totalFocusTimeSeconds, colorIndex, o
             {progress}%
           </span>
         </div>
-        <div className="h-[3px] bg-[#1E1E1E] rounded-full overflow-hidden w-full">
+        <div className="bg-[#1E1E1E] rounded-full overflow-hidden w-full" style={{ height: "6px" }}>
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${Math.min(100, Math.max(0, progress))}%`, backgroundColor: accentColor }}

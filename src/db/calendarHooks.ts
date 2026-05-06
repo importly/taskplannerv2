@@ -61,7 +61,7 @@ export function useUpcomingEvents(count?: number) {
       return count ? events.slice(0, count) : events;
     },
     enabled: true, // Always run, service handles null token
-    refetchInterval: 300000, // 5 minutes
+    refetchInterval: 60000, // 1 minute
   });
 }
 
@@ -78,6 +78,6 @@ export function useNext12hEvents() {
       return await getNext12hEvents(token);
     },
     enabled: true,
-    refetchInterval: 300000, // 5 minutes
+    refetchInterval: 60000, // 1 minute
   });
 }
