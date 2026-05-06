@@ -185,11 +185,15 @@ export default function CommandCenter() {
   const renderTimerContent = (isWater: boolean) => {
     const isIdle = status === "IDLE";
     const digColor = isWater ? waterDigColor : airDigColor;
-    // Lower value above (scroll up → old center moves up → lower sits above new center)
-    // Higher value below (scroll up → higher enters from below)
-    const ghostAbove = isIdle && !isWater && targetMinutes > 1 ? fmtIdleMinutes(targetMinutes - 1) : "";
-    const ghostBelow = isIdle && !isWater && targetMinutes < 180 ? fmtIdleMinutes(targetMinutes + 1) : "";
-    // IDLE: direction from scroll (+1 = increasing, -1 = decreasing). Active: always counting down (-1)
+    // 3 ghost rows above (n-3 … n-1, top→bottom) and below (n+1 … n+3, top→bottom)
+    const ghostsAbove = isIdle && !isWater
+      ? [3, 2, 1].map(off => { const v = targetMinutes - off; return v >= 1 ? fmtIdleMinutes(v) : null; })
+      : [];
+    const ghostsBelow = isIdle && !isWater
+      ? [1, 2, 3].map(off => { const v = targetMinutes + off; return v <= 180 ? fmtIdleMinutes(v) : null; })
+      : [];
+    const aboveOpacity = [0.05, 0.11, 0.19]; // farthest → closest
+    const belowOpacity = [0.19, 0.11, 0.05]; // closest → farthest
     const timerDirection = isIdle ? scrollDirRef.current : -1;
 
     return (
@@ -210,28 +214,43 @@ export default function CommandCenter() {
               overflow: "visible",
             }}
           >
-            {/* Ghost numbers above/below in IDLE */}
+            {/* Ghost stacks — 3 rows above and below */}
             {isIdle && !isWater && (
               <>
-                <div style={{ position: "absolute", top: 0, left: "50%", transform: "translate(-50%, -100%)", pointerEvents: "none", userSelect: "none" }}>
-                  {ghostAbove && (
+                {/* Above: translateY(-100%) shifts the whole stack up by its own height */}
+                <div style={{
+                  position: "absolute", top: 0, left: "50%",
+                  transform: "translate(-50%, -100%)",
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  pointerEvents: "none", userSelect: "none",
+                }}>
+                  {ghostsAbove.map((val, i) => val ? (
                     <RollingDigits
-                      value={ghostAbove}
+                      key={i}
+                      value={val}
                       direction={timerDirection}
-                      className="font-sans tabular-nums font-bold"
-                      style={{ fontSize, letterSpacing: "-0.04em", lineHeight: "0.85", color: "rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}
+                      className="font-mono font-bold"
+                      style={{ fontSize, letterSpacing: "-0.04em", color: `rgba(255,255,255,${aboveOpacity[i]})`, whiteSpace: "nowrap" }}
                     />
-                  )}
+                  ) : <div key={i} style={{ height: "1em", fontSize }} />)}
                 </div>
-                <div style={{ position: "absolute", bottom: 0, left: "50%", transform: "translate(-50%, 100%)", pointerEvents: "none", userSelect: "none" }}>
-                  {ghostBelow && (
+
+                {/* Below: translateY(100%) shifts the whole stack down by its own height */}
+                <div style={{
+                  position: "absolute", bottom: 0, left: "50%",
+                  transform: "translate(-50%, 100%)",
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  pointerEvents: "none", userSelect: "none",
+                }}>
+                  {ghostsBelow.map((val, i) => val ? (
                     <RollingDigits
-                      value={ghostBelow}
+                      key={i}
+                      value={val}
                       direction={timerDirection}
-                      className="font-sans tabular-nums font-bold"
-                      style={{ fontSize, letterSpacing: "-0.04em", lineHeight: "0.85", color: "rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}
+                      className="font-mono font-bold"
+                      style={{ fontSize, letterSpacing: "-0.04em", color: `rgba(255,255,255,${belowOpacity[i]})`, whiteSpace: "nowrap" }}
                     />
-                  )}
+                  ) : <div key={i} style={{ height: "1em", fontSize }} />)}
                 </div>
               </>
             )}
@@ -239,11 +258,10 @@ export default function CommandCenter() {
             <RollingDigits
               value={displayTime}
               direction={timerDirection}
-              className="font-sans tabular-nums font-bold leading-none"
+              className="font-mono font-bold"
               style={{
                 fontSize,
                 letterSpacing: "-0.04em",
-                lineHeight: "0.85",
                 color: digColor,
                 transition: "font-size 0.5s ease, color 0.35s ease",
               }}

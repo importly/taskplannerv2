@@ -43,11 +43,21 @@ export const CompactWhirlwind = () => {
       <div className="text-sm font-bold tracking-[0.12em] text-white/60 uppercase" style={{ marginBottom: 16 }}>Whirlwind</div>
       <div className="flex flex-col">
         {sortedTasks.length > 0 ? (
-          sortedTasks.map((task) => {
+          sortedTasks.map((task, i) => {
             const dueStatus = getDueStatus(task.due_date);
 
             return (
-              <div key={task.ms_task_id} className="flex items-center border-b last:border-0 group" style={{ gap: 12, padding: "8px 0", borderColor: "rgba(255,255,255,0.03)" }}>
+              <div
+                key={task.ms_task_id}
+                className="flex items-center border-b last:border-0 group"
+                style={{
+                  gap: 12,
+                  padding: "8px 0",
+                  borderColor: "rgba(255,255,255,0.03)",
+                  animation: "stagger-up 280ms cubic-bezier(0.22, 1, 0.36, 1) both",
+                  animationDelay: `${i * 40}ms`,
+                }}
+              >
                 <button 
                   onClick={() => completeTaskMutation.mutate({ taskId: task.ms_task_id, listId: task.list_id || "" })}
                   className="w-5 h-5 rounded-full border-[2px] border-white/30 shrink-0 hover:bg-white/20 transition-colors"

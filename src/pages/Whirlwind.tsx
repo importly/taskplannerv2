@@ -107,7 +107,7 @@ export default function Whirlwind() {
       </div>
 
       {/* Sync status */}
-      <div style={{ fontSize: 11, fontFamily: "var(--font-family-mono, monospace)", color: "#3A3A3C", marginBottom: 24 }}>
+      <div className="font-mono" style={{ fontSize: 11, color: "#3A3A3C", marginBottom: 24 }}>
         <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: isSyncing ? "#FF9500" : "#30D158", marginRight: 6, verticalAlign: "middle" }} />
         {isSyncing ? "Syncing..." : "Microsoft To Do · synced"}
       </div>

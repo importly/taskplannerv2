@@ -69,6 +69,8 @@ function AppShell() {
                 border: "none",
                 cursor: "pointer",
                 whiteSpace: "nowrap",
+                transition: "color 200ms ease, background 200ms ease",
+                transform: page === p ? "scale(1)" : "scale(0.97)",
               }}
             >
               {p === "command-center" ? "Focus" : p.charAt(0).toUpperCase() + p.slice(1)}
@@ -96,10 +98,12 @@ function AppShell() {
       </nav>
 
       <main className="no-scrollbar" style={{ flex: 1, overflow: page === "command-center" ? "hidden" : "auto", background: "#000", padding: 0 }}>
-        {page === "command-center" && <CommandCenter />}
-        {page === "goals" && <GoalsDashboard />}
-        {page === "whirlwind" && <Whirlwind />}
-        {page === "stats" && <Stats />}
+        <div key={page} style={{ height: "100%", animation: "page-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards" }}>
+          {page === "command-center" && <CommandCenter />}
+          {page === "goals" && <GoalsDashboard />}
+          {page === "whirlwind" && <Whirlwind />}
+          {page === "stats" && <Stats />}
+        </div>
       </main>
 
       <ReflectionModal />

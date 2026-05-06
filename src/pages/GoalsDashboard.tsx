@@ -111,14 +111,21 @@ export default function GoalsDashboard() {
         ) : (
           <div className="grid grid-cols-2 items-start" style={{ gap: "12px" }}>
             {activeGoals?.map((goal, i) => (
-              <GoalCard
+              <div
                 key={goal.id}
-                title={goal.title}
-                progress={goal.progress_percent}
-                totalFocusTimeSeconds={goal.total_focus_seconds}
-                colorIndex={i}
-                onClick={() => setSelectedGoalId(goal.id)}
-              />
+                style={{
+                  animation: "stagger-up 300ms cubic-bezier(0.22, 1, 0.36, 1) both",
+                  animationDelay: `${i * 55}ms`,
+                }}
+              >
+                <GoalCard
+                  title={goal.title}
+                  progress={goal.progress_percent}
+                  totalFocusTimeSeconds={goal.total_focus_seconds}
+                  colorIndex={i}
+                  onClick={() => setSelectedGoalId(goal.id)}
+                />
+              </div>
             ))}
 
             {/* New goal placeholder card */}
@@ -193,7 +200,7 @@ export default function GoalsDashboard() {
       {isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(8px)", padding: 16 }}
+          style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(8px)", padding: 16, animation: "fade-in 150ms ease forwards" }}
         >
           <div
             className="w-full"
@@ -203,6 +210,7 @@ export default function GoalsDashboard() {
               border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 20,
               padding: 24,
+              animation: "scale-in 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards",
             }}
           >
             <div className="text-[18px] font-bold text-white" style={{ marginBottom: "24px" }}>New Strategic Goal</div>

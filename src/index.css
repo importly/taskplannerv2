@@ -156,20 +156,44 @@
 @layer utilities {
   /* Rolling digit animations — countdown ticks down, scroll-up ticks up */
   @keyframes roll-in-down {
-    from { transform: translateY(-110%); opacity: 0; filter: blur(3px); }
+    from { transform: translateY(-105%); opacity: 0; filter: blur(2px); }
     to   { transform: translateY(0);     opacity: 1; filter: blur(0);   }
   }
   @keyframes roll-out-down {
     from { transform: translateY(0);     opacity: 1; filter: blur(0);   }
-    to   { transform: translateY(110%);  opacity: 0; filter: blur(3px); }
+    to   { transform: translateY(105%);  opacity: 0; filter: blur(2px); }
   }
   @keyframes roll-in-up {
-    from { transform: translateY(110%);  opacity: 0; filter: blur(3px); }
+    from { transform: translateY(105%);  opacity: 0; filter: blur(2px); }
     to   { transform: translateY(0);     opacity: 1; filter: blur(0);   }
   }
   @keyframes roll-out-up {
     from { transform: translateY(0);      opacity: 1; filter: blur(0);   }
-    to   { transform: translateY(-110%);  opacity: 0; filter: blur(3px); }
+    to   { transform: translateY(-105%);  opacity: 0; filter: blur(2px); }
+  }
+
+  /* Page entrance — new page fades + rises in */
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Card / row stagger entrance */
+  @keyframes stagger-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Modal scale-in */
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.94); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* Overlay fade */
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
 
   .glass-surface {
