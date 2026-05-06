@@ -278,27 +278,51 @@ export default function CommandCenter() {
           )}
 
           {/* Buttons */}
-          <div className="flex justify-center" style={{ gap: 16, marginTop: isIdle ? 24 : 32, minHeight: 48, pointerEvents: isWater ? "none" : "auto" }}>
-            {isIdle ? (
-              <button
-                onClick={start}
-                style={{ padding: "12px 32px" }}
-                className={`rounded-full text-base font-semibold transition-all hover:scale-105 active:scale-95 ${isWater ? waterBtnClass : "bg-[#E1FF00] text-black"}`}
-              >
-                Start Session
-              </button>
-            ) : status === "ACTIVE" ? (
-              <>
-                <button onClick={pause} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-white/10 ${isWater ? waterBtnClass : "bg-white/5 text-white/90 border-white/20"}`}>Pause</button>
-                <button onClick={stop} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-[#FF3B30]/20 ${isWater ? waterBtnClass : "bg-[#FF3B30]/10 text-[#FF3B30] border-[#FF3B30]/30"}`}>Stop</button>
-              </>
-            ) : (
-              <>
-                <button onClick={resume} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-white/10 ${isWater ? waterBtnClass : "bg-white/5 text-white/90 border-white/20"}`}>Resume</button>
-                <button onClick={stop} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-white/10 ${isWater ? waterBtnClass : "bg-white/5 text-white/70 border-white/20"}`}>Stop</button>
-              </>
-            )}
-          </div>
+          {(() => {
+            // Wraps a button with a blurred dark halo that actually obscures content behind it
+            const H = ({ children }: { children: React.ReactNode }) => !isWater ? (
+              <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{
+                  position: "absolute",
+                  inset: "-28px -40px",
+                  borderRadius: "9999px",
+                  background: "radial-gradient(ellipse at center, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.35) 50%, transparent 100%)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  maskImage: "radial-gradient(ellipse at center, black 30%, transparent 100%)",
+                  WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 100%)",
+                  pointerEvents: "none",
+                }} />
+                <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
+              </div>
+            ) : <>{children}</>;
+
+            return (
+              <div className="flex justify-center" style={{ gap: 16, marginTop: isIdle ? 24 : 32, minHeight: 48, pointerEvents: isWater ? "none" : "auto" }}>
+                {isIdle ? (
+                  <H>
+                    <button
+                      onClick={start}
+                      style={{ padding: "12px 32px" }}
+                      className={`rounded-full text-base font-semibold transition-all hover:scale-105 active:scale-95 ${isWater ? waterBtnClass : "bg-[#E1FF00] text-black"}`}
+                    >
+                      Start Session
+                    </button>
+                  </H>
+                ) : status === "ACTIVE" ? (
+                  <>
+                    <H><button onClick={pause} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-white/10 ${isWater ? waterBtnClass : "bg-white/5 text-white/90 border-white/20"}`}>Pause</button></H>
+                    <H><button onClick={stop} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-[#FF3B30]/20 ${isWater ? waterBtnClass : "bg-[#FF3B30]/10 text-[#FF3B30] border-[#FF3B30]/30"}`}>Stop</button></H>
+                  </>
+                ) : (
+                  <>
+                    <H><button onClick={resume} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-white/10 ${isWater ? waterBtnClass : "bg-white/5 text-white/90 border-white/20"}`}>Resume</button></H>
+                    <H><button onClick={stop} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-white/10 ${isWater ? waterBtnClass : "bg-white/5 text-white/70 border-white/20"}`}>Stop</button></H>
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     );

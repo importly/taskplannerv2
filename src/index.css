@@ -154,22 +154,24 @@
 }
 
 @layer utilities {
-  /* Rolling digit animations — countdown ticks down, scroll-up ticks up */
+  /* Rolling digit animations — slot-reel style: no opacity, exact 100% travel.
+     At every frame t: outgoing shows (1-t) of height, incoming shows t of height.
+     Together they always tile the 1em container — no gap, no pop-in. */
   @keyframes roll-in-down {
-    from { transform: translateY(-105%); opacity: 0; filter: blur(2px); }
-    to   { transform: translateY(0);     opacity: 1; filter: blur(0);   }
+    from { transform: translateY(-100%); filter: blur(18px); }
+    to   { transform: translateY(0);     filter: blur(0);   }
   }
   @keyframes roll-out-down {
-    from { transform: translateY(0);     opacity: 1; filter: blur(0);   }
-    to   { transform: translateY(105%);  opacity: 0; filter: blur(2px); }
+    from { transform: translateY(0);     filter: blur(0);   }
+    to   { transform: translateY(100%);  filter: blur(18px); }
   }
   @keyframes roll-in-up {
-    from { transform: translateY(105%);  opacity: 0; filter: blur(2px); }
-    to   { transform: translateY(0);     opacity: 1; filter: blur(0);   }
+    from { transform: translateY(100%);  filter: blur(18px); }
+    to   { transform: translateY(0);     filter: blur(0);   }
   }
   @keyframes roll-out-up {
-    from { transform: translateY(0);      opacity: 1; filter: blur(0);   }
-    to   { transform: translateY(-105%);  opacity: 0; filter: blur(2px); }
+    from { transform: translateY(0);      filter: blur(0);   }
+    to   { transform: translateY(-100%);  filter: blur(18px); }
   }
 
   /* Page entrance — new page fades + rises in */
@@ -216,3 +218,4 @@
     @apply font-sans;
   }
 }
+
