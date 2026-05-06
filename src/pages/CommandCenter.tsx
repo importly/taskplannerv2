@@ -111,20 +111,23 @@ export default function CommandCenter() {
 
   // Scroll-to-select handler (IDLE only)
   const scrollAccum = useRef(0);
+  const scrollDirRef = useRef<number | undefined>(undefined);
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (status !== "IDLE") return;
     e.preventDefault();
 
-    // Accumulate scroll delta for smoother discrete steps
     scrollAccum.current += e.deltaY;
     const threshold = 40;
 
     if (Math.abs(scrollAccum.current) >= threshold) {
-      const steps = Math.sign(scrollAccum.current); // +1 = scroll down = decrease, -1 = scroll up = increase
+      const steps = Math.sign(scrollAccum.current); // +1 = scroll down, -1 = scroll up
       scrollAccum.current = 0;
 
+      // scroll up (+1 after negation) = increase, scroll down (-1) = decrease
+      scrollDirRef.current = -steps;
+
       const current = useTimerStore.getState().targetMinutes;
-      const next = Math.max(1, Math.min(180, current + steps));
+      const next = Math.max(1, Math.min(180, current - steps));
       if (next !== current) {
         setTargetMinutes(next);
       }
@@ -174,9 +177,20 @@ export default function CommandCenter() {
   const fontSize = hasHours ? "clamp(72px, 11vw, 180px)" : "clamp(96px, 15vw, 240px)";
 
   // Dual layer rendering
+  const fmtIdleMinutes = (n: number) => {
+    if (n >= 60) return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}:00`;
+    return `${String(n).padStart(2, "0")}:00`;
+  };
+
   const renderTimerContent = (isWater: boolean) => {
     const isIdle = status === "IDLE";
     const digColor = isWater ? waterDigColor : airDigColor;
+    // Lower value above (scroll up → old center moves up → lower sits above new center)
+    // Higher value below (scroll up → higher enters from below)
+    const ghostAbove = isIdle && !isWater && targetMinutes > 1 ? fmtIdleMinutes(targetMinutes - 1) : "";
+    const ghostBelow = isIdle && !isWater && targetMinutes < 180 ? fmtIdleMinutes(targetMinutes + 1) : "";
+    // IDLE: direction from scroll (+1 = increasing, -1 = decreasing). Active: always counting down (-1)
+    const timerDirection = isIdle ? scrollDirRef.current : -1;
 
     return (
       <div className={`absolute inset-0 flex items-center justify-center ${isWater ? "z-10 pointer-events-none" : "z-0"}`}>
@@ -199,37 +213,32 @@ export default function CommandCenter() {
             {/* Ghost numbers above/below in IDLE */}
             {isIdle && !isWater && (
               <>
-                <div style={{
-                  position: "absolute", top: 0, left: "50%", transform: "translate(-50%, -100%)",
-                  fontSize, letterSpacing: "-0.04em", lineHeight: "0.85",
-                  color: "rgba(255,255,255,0.06)", fontWeight: 700,
-                  fontFamily: "var(--font-sans)", whiteSpace: "nowrap",
-                  pointerEvents: "none", userSelect: "none",
-                }}>
-                  {targetMinutes < 180 ? (() => {
-                    const n = targetMinutes + 1;
-                    if (n >= 60) return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}:00`;
-                    return `${String(n).padStart(2, "0")}:00`;
-                  })() : ""}
+                <div style={{ position: "absolute", top: 0, left: "50%", transform: "translate(-50%, -100%)", pointerEvents: "none", userSelect: "none" }}>
+                  {ghostAbove && (
+                    <RollingDigits
+                      value={ghostAbove}
+                      direction={timerDirection}
+                      className="font-sans tabular-nums font-bold"
+                      style={{ fontSize, letterSpacing: "-0.04em", lineHeight: "0.85", color: "rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}
+                    />
+                  )}
                 </div>
-                <div style={{
-                  position: "absolute", bottom: 0, left: "50%", transform: "translate(-50%, 100%)",
-                  fontSize, letterSpacing: "-0.04em", lineHeight: "0.85",
-                  color: "rgba(255,255,255,0.06)", fontWeight: 700,
-                  fontFamily: "var(--font-sans)", whiteSpace: "nowrap",
-                  pointerEvents: "none", userSelect: "none",
-                }}>
-                  {targetMinutes > 1 ? (() => {
-                    const n = targetMinutes - 1;
-                    if (n >= 60) return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}:00`;
-                    return `${String(n).padStart(2, "0")}:00`;
-                  })() : ""}
+                <div style={{ position: "absolute", bottom: 0, left: "50%", transform: "translate(-50%, 100%)", pointerEvents: "none", userSelect: "none" }}>
+                  {ghostBelow && (
+                    <RollingDigits
+                      value={ghostBelow}
+                      direction={timerDirection}
+                      className="font-sans tabular-nums font-bold"
+                      style={{ fontSize, letterSpacing: "-0.04em", lineHeight: "0.85", color: "rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}
+                    />
+                  )}
                 </div>
               </>
             )}
 
             <RollingDigits
               value={displayTime}
+              direction={timerDirection}
               className="font-sans tabular-nums font-bold leading-none"
               style={{
                 fontSize,

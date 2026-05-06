@@ -1,85 +1,116 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 
 /**
- * Animates an entire value string as one unit — the whole string 
- * slides out and the new one slides in. No per-character clipping.
- * Works cleanly at any font size.
+ * Individual character cell that rolls vertically when its value changes.
+ * Non-digit chars (: - space) render static.
  */
-export function RollingDigits({
-  value,
-  className,
-  style,
-}: {
-  value: string;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  const [state, setState] = useState({
-    current: value,
-    prev: null as string | null,
-    dir: 0,
-  });
+const RollingChar = memo(({ char, direction }: { char: string; direction?: number }) => {
+  const [state, setState] = useState({ current: char, prev: null as string | null, dir: 0 });
   const timerRef = useRef<number | undefined>(undefined);
+  const dirRef = useRef<number | undefined>(direction);
+  dirRef.current = direction;
 
   useEffect(() => {
-    if (value !== state.current) {
+    if (char !== state.current) {
       clearTimeout(timerRef.current);
       setState(s => ({
-        current: value,
+        current: char,
         prev: s.current,
-        dir: value < s.current ? -1 : 1,
+        dir: dirRef.current ? dirRef.current : (char < s.current ? -1 : 1),
       }));
       timerRef.current = window.setTimeout(() => {
         setState(s => ({ ...s, prev: null }));
-      }, 350);
+      }, 320);
     }
     return () => clearTimeout(timerRef.current);
-  }, [value]);
+  }, [char]);
+
+  // Static characters — no animation
+  if (char === ":" || char === "-" || char === " ") {
+    return <span style={{ display: "inline-block" }}>{char}</span>;
+  }
 
   const { current, prev, dir } = state;
   const isAnimating = prev !== null;
 
   return (
     <span
-      className={className}
       style={{
-        ...style,
         position: "relative",
-        display: "inline-block",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
         overflow: "hidden",
-        /* Generous padding so glyphs aren't clipped at rest */
-        paddingTop: "0.08em",
-        paddingBottom: "0.08em",
+        width: "0.62em",
+        height: "1.15em",
+        textAlign: "center",
+        verticalAlign: "top",
       }}
     >
-      {/* Current value — slides in */}
+      {/* Current digit — slides in */}
       <span
+        key={`c-${current}-${dir}`}
         style={{
-          display: "block",
-          whiteSpace: "nowrap",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+          height: "100%",
           animation: isAnimating
-            ? `roll-in-${dir < 0 ? "down" : "up"} 320ms cubic-bezier(0.22, 1, 0.36, 1) both`
+            ? `roll-in-${dir < 0 ? "down" : "up"} 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards`
             : undefined,
         }}
       >
         {current}
       </span>
 
-      {/* Previous value — slides out */}
+      {/* Previous digit — slides out */}
       {isAnimating && (
         <span
+          key={`p-${prev}-${dir}`}
           style={{
             position: "absolute",
             left: 0,
-            top: "0.08em",
+            top: 0,
             width: "100%",
-            whiteSpace: "nowrap",
-            animation: `roll-out-${dir < 0 ? "down" : "up"} 320ms cubic-bezier(0.22, 1, 0.36, 1) both`,
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            animation: `roll-out-${dir < 0 ? "down" : "up"} 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards`,
           }}
         >
           {prev}
         </span>
       )}
+    </span>
+  );
+});
+
+RollingChar.displayName = "RollingChar";
+
+/**
+ * Renders a string where each character independently rolls when changed.
+ * Used for the countdown timer display.
+ */
+export function RollingDigits({
+  value,
+  className,
+  style,
+  direction,
+}: {
+  value: string;
+  className?: string;
+  style?: React.CSSProperties;
+  direction?: number;
+}) {
+  const chars = value.split("");
+
+  return (
+    <span className={className} style={{ ...style, display: "inline-flex", alignItems: "baseline" }}>
+      {chars.map((char, i) => (
+        <RollingChar key={i} char={char} direction={direction} />
+      ))}
     </span>
   );
 }
