@@ -62,8 +62,8 @@ export const ReflectionModal = () => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md" style={{ padding: "16px" }}>
       <div className="flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" style={{ background: "#000000", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", width: "100%", maxWidth: "672px", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}>
         <div style={{ padding: "32px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#ffffff", fontFamily: "'Inter', sans-serif" }}>Session Complete</h2>
-          <p style={{ color: "#8E8E93", fontSize: "14px", marginTop: "8px", fontFamily: "'Inter', sans-serif" }}>Reflect on your focus time.</p>
+          <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#ffffff", fontFamily: "var(--font-sans), sans-serif" }}>Session Complete</h2>
+          <p style={{ color: "#8E8E93", fontSize: "14px", marginTop: "8px", fontFamily: "var(--font-sans), sans-serif" }}>Reflect on your focus time.</p>
         </div>
 
         <div className="overflow-y-auto no-scrollbar flex flex-col" style={{ padding: "32px", gap: "24px", maxHeight: "60vh" }}>
@@ -72,7 +72,7 @@ export const ReflectionModal = () => {
             <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Journal / Narrative</label>
             <textarea
               className="w-full h-32 focus:outline-none transition-colors resize-none"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "14px", color: "#ffffff", fontSize: "14px", fontFamily: "'Inter', sans-serif" }}
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "14px", color: "#ffffff", fontSize: "14px", fontFamily: "var(--font-sans), sans-serif" }}
               placeholder="What did you achieve? Any obstacles?"
               value={journalContent}
               onChange={(e) => setJournal(e.target.value)}
@@ -104,7 +104,7 @@ export const ReflectionModal = () => {
                       fontSize: "12px",
                       fontWeight: 600,
                       cursor: "pointer",
-                      fontFamily: "'Inter', sans-serif",
+                      fontFamily: "var(--font-sans), sans-serif",
                       transition: "all 0.2s ease"
                     }}
                   >
@@ -120,7 +120,7 @@ export const ReflectionModal = () => {
             <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Linked Goal</label>
             <select
               className="w-full focus:outline-none transition-colors appearance-none"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "14px", color: "#ffffff", fontSize: "14px", fontFamily: "'Inter', sans-serif" }}
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "14px", color: "#ffffff", fontSize: "14px", fontFamily: "var(--font-sans), sans-serif" }}
               value={linkedGoalId || ""}
               onChange={(e) => setGoal(e.target.value || null)}
             >
@@ -137,13 +137,13 @@ export const ReflectionModal = () => {
         <div className="flex items-center" style={{ padding: "24px 32px", gap: "16px", borderTop: "1px solid rgba(255,255,255,0.08)", background: "#000000" }}>
           <button 
             onClick={handleCommit} 
-            style={{ flex: 1, background: "#E1FF00", color: "#000000", padding: "12px 24px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, fontFamily: "'Inter', sans-serif", border: "none", cursor: "pointer", transition: "all 0.2s ease" }}
+            style={{ flex: 1, background: "#E1FF00", color: "#000000", padding: "12px 24px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, fontFamily: "var(--font-sans), sans-serif", border: "none", cursor: "pointer", transition: "all 0.2s ease" }}
           >
             Commit Session
           </button>
           <button 
             onClick={handleDiscard} 
-            style={{ background: "transparent", color: "rgba(255,255,255,0.5)", padding: "12px 16px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, fontFamily: "'Inter', sans-serif", border: "none", cursor: "pointer", transition: "color 0.2s ease" }}
+            style={{ background: "transparent", color: "rgba(255,255,255,0.5)", padding: "12px 16px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, fontFamily: "var(--font-sans), sans-serif", border: "none", cursor: "pointer", transition: "color 0.2s ease" }}
             onMouseOver={(e) => e.currentTarget.style.color = "#FF3B30"}
             onMouseOut={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.5)"}
           >

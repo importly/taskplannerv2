@@ -51,7 +51,7 @@ function AppShell() {
   if (!dbReady) return null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#000", color: "#fff", overflow: "hidden", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#000", color: "#fff", overflow: "hidden", fontFamily: "var(--font-sans), system-ui, sans-serif" }}>
       {/* Titlebar */}
       <nav style={{ display: "flex", alignItems: "center", height: 44, padding: "0 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0, gap: 6 }}>
         <div style={{ display: "flex", gap: 2 }}>

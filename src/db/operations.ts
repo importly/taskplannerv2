@@ -11,13 +11,13 @@ export async function saveFocusSession() {
   const timer = useTimerStore.getState();
   const session = useSessionStore.getState();
 
-  // startTime is null by the time we reach STOPPED (stop() clears it).
-  // Reconstruct the real start from: now - focusElapsed - breakElapsed.
-  const now = Date.now();
+  // Use the captured stoppedAt time as the authoritative end of the session.
+  // This prevents drift if the user stays in the ReflectionModal for minutes.
+  const endTimestamp = timer.stoppedAt || Date.now();
   const totalElapsedMs = (timer.focusElapsedSeconds + timer.breakElapsedSeconds) * 1000;
-  const sessionStartTime = now - totalElapsedMs;
+  const sessionStartTime = endTimestamp - totalElapsedMs;
   const startTimeStr = new Date(sessionStartTime).toISOString();
-  const endTimeStr = new Date(now).toISOString();
+  const endTimeStr = new Date(endTimestamp).toISOString();
   const sessionId = crypto.randomUUID();
 
   await db.transaction().execute(async (trx) => {

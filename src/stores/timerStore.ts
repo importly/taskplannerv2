@@ -21,6 +21,7 @@ interface TimerStore {
 
   // Configuration
   targetMinutes: number;
+  stoppedAt: number | null;          // Date.now() when STOPPED was called
 
   // Actions
   start: () => void;
@@ -48,6 +49,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   penaltyCountdown: null,
   isMiniPlayer: false,
   targetMinutes: 25,
+  stoppedAt: null,
 
   start: () => {
     if (get().status !== "IDLE") return;
@@ -58,6 +60,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       penaltyCountdown: null,
       focusElapsedSeconds: 0,
       breakElapsedSeconds: 0,
+      stoppedAt: null,
     });
   },
 
@@ -126,6 +129,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       startTime: null,
       pausedAt: null,
       penaltyCountdown: null,
+      stoppedAt: now,
     });
   },
 
@@ -138,6 +142,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       breakElapsedSeconds: 0,
       penalized: false,
       penaltyCountdown: null,
+      stoppedAt: null,
     });
   },
 
@@ -151,10 +156,16 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       breakElapsedSeconds: 0,
       penalized: false,
       penaltyCountdown: null,
+      stoppedAt: null,
     });
   },
 
   tick: () => {
+    /* 
+     * NOTE: Penalize functionality is currently disabled as it is broken.
+     * The logic below is commented out to prevent accidental penalties.
+     */
+    /*
     const { status, penaltyCountdown, setPenalized } = get();
     if (status === "ACTIVE" && penaltyCountdown !== null) {
       if (penaltyCountdown > 0) {
@@ -163,13 +174,19 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
         setPenalized();
       }
     }
+    */
   },
 
   handleBlur: () => {
+    /* 
+     * NOTE: Penalize functionality is currently disabled as it is broken.
+     */
+    /*
     const { status, penalized } = get();
     if (status === "ACTIVE" && !penalized) {
       set({ penaltyCountdown: 15 });
     }
+    */
   },
 
   handleFocus: () => {
