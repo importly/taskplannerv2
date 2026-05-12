@@ -24,9 +24,14 @@ export function useAllTags() {
 export function useCreateTag() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (tag: { id: string; name: string; rpg_attribute: string; color_hex: string }) => {
+    mutationFn: async (tag: { name: string; rpg_attribute: string; color_hex: string }) => {
       const db = getDb();
-      await db.insertInto("tags").values(tag).execute();
+      await db.insertInto("tags").values({
+        id: crypto.randomUUID(),
+        name: tag.name,
+        rpg_attribute: tag.rpg_attribute,
+        color_hex: tag.color_hex,
+      }).execute();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: gamificationKeys.tags() });
@@ -37,11 +42,12 @@ export function useCreateTag() {
 export function useUpdateTag() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (tag: { id: string; rpg_attribute: string; color_hex: string }) => {
+    mutationFn: async (tag: { id: string; name: string; rpg_attribute: string; color_hex: string }) => {
       const db = getDb();
       await db
         .updateTable("tags")
         .set({
+          name: tag.name,
           rpg_attribute: tag.rpg_attribute,
           color_hex: tag.color_hex,
         })
