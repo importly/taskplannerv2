@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { useAllTags, useCreateTag, useUpdateTag, useDeleteTag } from "../../db/gamificationHooks";
+
 const ATTRIBUTES = ["Systems", "Algorithms", "Logic", "Communication", "Knowledge", "Craft"];
 
 export function TagManager() {
@@ -9,24 +10,26 @@ export function TagManager() {
   const updateTag = useUpdateTag();
   const deleteTag = useDeleteTag();
 
-  const [newTag, setNewTag] = useState({ id: "", name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
+  const [newTag, setNewTag] = useState({ name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ id: "", rpg_attribute: "", color_hex: "" });
+  const [editForm, setEditForm] = useState({ id: "", name: "", rpg_attribute: "", color_hex: "" });
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTag.id) return;
+    if (!newTag.name.trim()) return;
     try {
       await createTag.mutateAsync(newTag);
-      setNewTag({ id: "", name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
+      setNewTag({ name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
     } catch (err) {
       console.error("Failed to create tag", err);
     }
   };
 
-  const startEdit = (tag: any) => {
+  const startEdit = (tag: { id: string; name: string; rpg_attribute: string; color_hex: string | null }) => {
+    setConfirmingDeleteId(null);
     setEditingId(tag.id);
-    setEditForm(tag);
+    setEditForm({ id: tag.id, name: tag.name, rpg_attribute: tag.rpg_attribute, color_hex: tag.color_hex || "#E1FF00" });
   };
 
   const handleUpdate = async () => {
@@ -40,51 +43,70 @@ export function TagManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(`Delete tag "${id}"?`)) {
-      try {
-        await deleteTag.mutateAsync(id);
-      } catch (err) {
-        console.error("Failed to delete tag", err);
-      }
+    try {
+      await deleteTag.mutateAsync(id);
+      setConfirmingDeleteId(null);
+    } catch (err) {
+      console.error("Failed to delete tag", err);
     }
   };
 
-  if (isLoading) return <div className="text-muted animate-pulse font-mono text-xs uppercase tracking-widest" style={{ padding: 16 }}>Initialising Tags...</div>;
+  if (isLoading) return (
+    <div className="font-mono text-xs uppercase tracking-widest text-white/20 animate-pulse" style={{ padding: 16 }}>
+      Loading tags...
+    </div>
+  );
 
   return (
-    <div className="flex flex-col" style={{ gap: 48 }}>
-      {/* Add Tag Form */}
-      <section className="relative">
-        <div className="absolute -left-4 top-0 bottom-0 w-1 bg-accent/20 rounded-full" />
-        <h3 className="text-[10px] font-black text-accent uppercase tracking-[0.3em]" style={{ marginBottom: 24 }}>Nexus / Create Tag</h3>
-        <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-4 items-end rounded-2xl border border-white/5 backdrop-blur-sm" style={{ padding: 24, gap: 16, background: "rgba(255,255,255,0.02)" }}>
-          <div className="flex flex-col" style={{ gap: 8 }}>
-            <label className="text-[9px] uppercase font-bold text-white/40 tracking-widest" style={{ marginLeft: 4 }}>Slug (ID)</label>
+    <div className="flex flex-col" style={{ gap: 40 }}>
+      {/* Create form */}
+      <section>
+        <h3
+          className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]"
+          style={{ marginBottom: 16 }}
+        >
+          Create Tag
+        </h3>
+        <form
+          onSubmit={handleAdd}
+          className="grid items-end rounded-xl border border-white/5"
+          style={{
+            gridTemplateColumns: "1fr 1fr auto auto",
+            padding: 20,
+            gap: 12,
+            background: "rgba(255,255,255,0.02)",
+          }}
+        >
+          <div className="flex flex-col" style={{ gap: 6 }}>
+            <label className="text-[9px] uppercase font-bold text-white/30 tracking-widest">Name</label>
             <input
               type="text"
-              placeholder="e.g. rust"
-              value={newTag.id}
-              onChange={e => setNewTag({ ...newTag, id: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-              className="w-full bg-black border border-white/10 rounded-lg text-sm focus:border-accent outline-none transition-all placeholder:text-white/10"
-              style={{ padding: "10px 16px" }}
+              placeholder="e.g. cuda"
+              value={newTag.name}
+              onChange={e => setNewTag({ ...newTag, name: e.target.value })}
+              className="bg-black border border-white/10 rounded-lg text-sm outline-none focus:border-[#E1FF00] transition-colors placeholder:text-white/10"
+              style={{ padding: "9px 14px" }}
               required
             />
           </div>
-          <div className="flex flex-col" style={{ gap: 8 }}>
-            <label className="text-[9px] uppercase font-bold text-white/40 tracking-widest" style={{ marginLeft: 4 }}>Attribute</label>
+          <div className="flex flex-col" style={{ gap: 6 }}>
+            <label className="text-[9px] uppercase font-bold text-white/30 tracking-widest">Attribute</label>
             <select
               value={newTag.rpg_attribute}
               onChange={e => setNewTag({ ...newTag, rpg_attribute: e.target.value })}
-              className="w-full bg-black border border-white/10 rounded-lg text-sm focus:border-accent outline-none transition-all appearance-none cursor-pointer"
-              style={{ padding: "10px 16px" }}
+              className="bg-black border border-white/10 rounded-lg text-sm outline-none focus:border-[#E1FF00] transition-colors appearance-none cursor-pointer"
+              style={{ padding: "9px 14px" }}
             >
               {ATTRIBUTES.map(attr => <option key={attr} value={attr}>{attr}</option>)}
             </select>
           </div>
-          <div className="flex flex-col" style={{ gap: 8 }}>
-            <label className="text-[9px] uppercase font-bold text-white/40 tracking-widest" style={{ marginLeft: 4 }}>Color</label>
+          <div className="flex flex-col" style={{ gap: 6 }}>
+            <label className="text-[9px] uppercase font-bold text-white/30 tracking-widest">Color</label>
             <div className="flex items-center" style={{ gap: 8 }}>
-               <div className="relative w-10 h-10 shrink-0 rounded-lg overflow-hidden border border-white/10">
+              <div
+                className="relative shrink-0 rounded-lg overflow-hidden border border-white/10"
+                style={{ width: 38, height: 38 }}
+              >
                 <input
                   type="color"
                   value={newTag.color_hex}
@@ -96,54 +118,98 @@ export function TagManager() {
                 type="text"
                 value={newTag.color_hex}
                 onChange={e => setNewTag({ ...newTag, color_hex: e.target.value })}
-                className="w-full bg-black border border-white/10 rounded-lg text-xs font-mono focus:border-accent outline-none uppercase"
-                style={{ padding: "10px 12px" }}
+                className="bg-black border border-white/10 rounded-lg text-xs font-mono outline-none focus:border-[#E1FF00] transition-colors uppercase"
+                style={{ padding: "9px 10px", width: 90 }}
               />
             </div>
           </div>
           <button
             type="submit"
-            disabled={createTag.isPending || !newTag.id}
-            className="w-full h-[46px] bg-accent text-black hover:shadow-[0_0_20px_rgba(225,255,0,0.3)] transition-all font-black border-none rounded-lg cursor-pointer disabled:opacity-50 flex items-center justify-center"
+            disabled={createTag.isPending || !newTag.name.trim()}
+            className="flex items-center justify-center font-bold text-sm rounded-lg border-none cursor-pointer disabled:opacity-40 transition-all hover:brightness-110"
+            style={{
+              background: "#E1FF00",
+              color: "#000",
+              padding: "9px 20px",
+              gap: 6,
+              height: 38,
+              alignSelf: "flex-end",
+            }}
           >
-            <Plus size={18} style={{ marginRight: 8 }} /> CREATE
+            <Plus size={14} /> CREATE
           </button>
         </form>
       </section>
 
-      {/* Tags List */}
+      {/* Tags list */}
       <section>
-        <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]" style={{ marginBottom: 24 }}>Active Registries</h3>
-        <div className="grid" style={{ gap: 12 }}>
+        <h3
+          className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]"
+          style={{ marginBottom: 16 }}
+        >
+          Tags
+        </h3>
+        <div className="flex flex-col" style={{ gap: 8 }}>
           {tags?.length === 0 && (
-            <div className="text-center rounded-2xl border border-dashed border-white/5 text-white/20 font-mono text-xs uppercase tracking-widest" style={{ padding: 48 }}>
-              No tags found in registry
+            <div
+              className="text-center rounded-xl border border-dashed border-white/5 text-white/20 font-mono text-xs uppercase tracking-widest"
+              style={{ padding: 40 }}
+            >
+              No tags yet
             </div>
           )}
-          {tags?.map(tag => (
-            <div 
-              key={tag.id} 
-              className="group flex items-center rounded-xl border border-white/5 hover:bg-white/5 hover:border-white/10 transition-all"
-              style={{ gap: 24, padding: 16, background: "rgba(255,255,255,0.01)" }}
-            >
-              <div 
-                className="w-4 h-4 rounded-full shadow-[0_0_15px_var(--shadow-color)] shrink-0" 
-                style={{ backgroundColor: tag.color_hex || '#555', '--shadow-color': tag.color_hex || 'transparent' } as any} 
-              />
-              
-              {editingId === tag.id ? (
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 items-center" style={{ gap: 16 }}>
-                   <div className="text-xs font-mono text-white/40 uppercase tracking-tighter">{tag.id}</div>
-                  <select
-                    value={editForm.rpg_attribute}
-                    onChange={e => setEditForm({ ...editForm, rpg_attribute: e.target.value })}
-                    className="bg-black border border-white/10 rounded-lg text-xs focus:border-accent outline-none appearance-none cursor-pointer"
-                    style={{ padding: "6px 12px" }}
+          {tags?.map(tag => {
+            const isEditing = editingId === tag.id;
+            const isConfirmingDelete = confirmingDeleteId === tag.id;
+
+            return (
+              <div
+                key={tag.id}
+                className="flex items-center rounded-xl border transition-all duration-150"
+                style={{
+                  gap: 14,
+                  padding: 14,
+                  background: isConfirmingDelete
+                    ? "rgba(255,59,48,0.06)"
+                    : "rgba(255,255,255,0.01)",
+                  borderColor: isConfirmingDelete
+                    ? "rgba(255,59,48,0.2)"
+                    : "rgba(255,255,255,0.05)",
+                }}
+              >
+                {/* Color dot */}
+                <div
+                  className="shrink-0 rounded-full"
+                  style={{
+                    width: 10,
+                    height: 10,
+                    background: tag.color_hex || "#555",
+                    boxShadow: `0 0 8px ${tag.color_hex || "transparent"}`,
+                  }}
+                />
+
+                {/* Body — view or edit */}
+                {isEditing ? (
+                  <div
+                    className="flex-1 grid items-center"
+                    style={{ gridTemplateColumns: "1fr 1fr auto", gap: 10 }}
                   >
-                    {ATTRIBUTES.map(attr => <option key={attr} value={attr}>{attr}</option>)}
-                  </select>
-                  <div className="flex items-center" style={{ gap: 8 }}>
-                    <div className="relative w-8 h-8 shrink-0 rounded-md overflow-hidden border border-white/10">
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                      className="bg-black border border-white/10 rounded-lg text-sm outline-none focus:border-[#E1FF00] transition-colors"
+                      style={{ padding: "6px 10px" }}
+                    />
+                    <select
+                      value={editForm.rpg_attribute}
+                      onChange={e => setEditForm({ ...editForm, rpg_attribute: e.target.value })}
+                      className="bg-black border border-white/10 rounded-lg text-xs outline-none focus:border-[#E1FF00] transition-colors appearance-none cursor-pointer"
+                      style={{ padding: "6px 10px" }}
+                    >
+                      {ATTRIBUTES.map(attr => <option key={attr} value={attr}>{attr}</option>)}
+                    </select>
+                    <div className="relative shrink-0 rounded-md overflow-hidden border border-white/10" style={{ width: 30, height: 30 }}>
                       <input
                         type="color"
                         value={editForm.color_hex}
@@ -151,57 +217,82 @@ export function TagManager() {
                         className="absolute inset-0 w-[150%] h-[150%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
                       />
                     </div>
-                    <input
-                      type="text"
-                      value={editForm.color_hex}
-                      onChange={e => setEditForm({ ...editForm, color_hex: e.target.value })}
-                      className="flex-1 bg-black border border-white/10 rounded-lg text-[10px] font-mono focus:border-accent outline-none uppercase"
-                      style={{ padding: "6px 8px" }}
-                    />
                   </div>
-                </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-between">
-                  <div className="flex items-center" style={{ gap: 24 }}>
-                    <span className="font-mono text-sm font-bold tracking-tight text-white/90 min-w-[100px]">{tag.id}</span>
-                    <span className="text-[9px] rounded-md bg-white/5 text-white/50 border border-white/5 font-black uppercase tracking-[0.15em]" style={{ padding: "4px 10px" }}>
+                ) : (
+                  <div className="flex-1 flex items-center" style={{ gap: 10 }}>
+                    <span className="font-mono text-sm font-semibold text-white/90">{tag.name}</span>
+                    <span
+                      className="text-[9px] rounded font-bold uppercase tracking-[0.12em] text-white/40 border border-white/5"
+                      style={{ padding: "3px 8px", background: "rgba(255,255,255,0.03)" }}
+                    >
                       {tag.rpg_attribute}
                     </span>
                   </div>
-                </div>
-              )}
-
-              <div className="flex" style={{ gap: 8 }}>
-                {editingId === tag.id ? (
-                  <>
-                    <button onClick={handleUpdate} className="rounded-lg bg-accent/10 text-accent hover:bg-accent hover:text-black transition-all border-none cursor-pointer" style={{ padding: 8 }}>
-                      <Check size={16} />
-                    </button>
-                    <button onClick={() => setEditingId(null)} className="rounded-lg bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all border-none cursor-pointer" style={{ padding: 8 }}>
-                      <X size={16} />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button 
-                      onClick={() => startEdit(tag)} 
-                      className="rounded-lg bg-white/5 text-white/40 opacity-0 group-hover:opacity-100 hover:bg-white/10 hover:text-white transition-all border-none cursor-pointer"
-                      style={{ padding: 8 }}
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(tag.id)} 
-                      className="rounded-lg bg-red-500/5 text-red-500/40 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-500 transition-all border-none cursor-pointer"
-                      style={{ padding: 8 }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </>
                 )}
+
+                {/* Action buttons */}
+                <div className="flex items-center shrink-0" style={{ gap: 4 }}>
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={handleUpdate}
+                        disabled={updateTag.isPending}
+                        className="rounded-lg border-none cursor-pointer transition-all hover:brightness-125 disabled:opacity-40"
+                        style={{ padding: 7, background: "rgba(225,255,0,0.12)", color: "#E1FF00" }}
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="rounded-lg border-none cursor-pointer transition-colors hover:bg-white/10"
+                        style={{ padding: 7, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </>
+                  ) : isConfirmingDelete ? (
+                    <>
+                      <span className="text-xs font-mono" style={{ color: "rgba(255,59,48,0.7)", marginRight: 4 }}>
+                        Delete?
+                      </span>
+                      <button
+                        onClick={() => handleDelete(tag.id)}
+                        disabled={deleteTag.isPending}
+                        className="rounded-lg border-none cursor-pointer transition-all hover:brightness-125 disabled:opacity-40"
+                        style={{ padding: 7, background: "rgba(255,59,48,0.15)", color: "#FF3B30" }}
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={() => setConfirmingDeleteId(null)}
+                        className="rounded-lg border-none cursor-pointer transition-colors hover:bg-white/10"
+                        style={{ padding: 7, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => startEdit(tag)}
+                        className="rounded-lg border-none cursor-pointer transition-colors hover:bg-white/10"
+                        style={{ padding: 7, background: "transparent", color: "rgba(255,255,255,0.25)" }}
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => { setEditingId(null); setConfirmingDeleteId(tag.id); }}
+                        className="rounded-lg border-none cursor-pointer transition-colors hover:bg-[#FF3B30]/10"
+                        style={{ padding: 7, background: "transparent", color: "rgba(255,59,48,0.35)" }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </div>
