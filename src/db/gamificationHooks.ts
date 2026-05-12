@@ -42,7 +42,7 @@ export function useCreateTag() {
 export function useUpdateTag() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (tag: { id: string; name: string; rpg_attribute: string; color_hex: string }) => {
+    mutationFn: async (tag: { id: string; name: string; rpg_attribute: string; color_hex: string | null }) => {
       const db = getDb();
       await db
         .updateTable("tags")

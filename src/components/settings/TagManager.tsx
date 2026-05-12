@@ -33,7 +33,7 @@ export function TagManager() {
   };
 
   const handleUpdate = async () => {
-    if (!editingId) return;
+    if (!editingId || !editForm.name.trim()) return;
     try {
       await updateTag.mutateAsync(editForm);
       setEditingId(null);
