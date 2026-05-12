@@ -24,7 +24,7 @@ export function useAllTags() {
 export function useCreateTag() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (tag: { id: string; rpg_attribute: string; color_hex: string }) => {
+    mutationFn: async (tag: { id: string; name: string; rpg_attribute: string; color_hex: string }) => {
       const db = getDb();
       await db.insertInto("tags").values(tag).execute();
     },
@@ -163,6 +163,21 @@ export function useStreak() {
       }
       
       return streak;
+    },
+  });
+}
+
+export function useTodayFocusMinutes() {
+  return useQuery({
+    queryKey: [...gamificationKeys.all, "today-focus"] as const,
+    queryFn: async () => {
+      const db = getDb();
+      const row = await db
+        .selectFrom("focus_sessions")
+        .select(sql<number>`SUM(focus_duration_seconds) / 60.0`.as("mins"))
+        .where(sql`DATE(start_time, 'localtime')`, "=", sql`DATE('now', 'localtime')`)
+        .executeTakeFirst();
+      return Math.floor(row?.mins || 0);
     },
   });
 }

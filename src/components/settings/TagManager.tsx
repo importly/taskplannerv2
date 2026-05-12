@@ -9,7 +9,7 @@ export function TagManager() {
   const updateTag = useUpdateTag();
   const deleteTag = useDeleteTag();
 
-  const [newTag, setNewTag] = useState({ id: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
+  const [newTag, setNewTag] = useState({ id: "", name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ id: "", rpg_attribute: "", color_hex: "" });
 
@@ -18,7 +18,7 @@ export function TagManager() {
     if (!newTag.id) return;
     try {
       await createTag.mutateAsync(newTag);
-      setNewTag({ id: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
+      setNewTag({ id: "", name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
     } catch (err) {
       console.error("Failed to create tag", err);
     }

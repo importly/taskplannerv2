@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useTimerStore } from "../stores/timerStore";
-import { CalendarNextUp } from "../components/cc/CalendarNextUp";
 import { GoalStatsPanel } from "../components/cc/GoalStatsPanel";
-import { CompactWhirlwind } from "../components/cc/CompactWhirlwind";
+import { GoalSelector } from "../components/cc/GoalSelector";
+import { CompactTasks } from "../components/cc/CompactWhirlwind";
 import { HeatmapStrip } from "../components/cc/HeatmapStrip";
 import { RollingDigits } from "../components/timer/RollingDigits";
 
@@ -112,7 +112,8 @@ export default function CommandCenter() {
   // Scroll-to-select handler (IDLE only)
   const scrollAccum = useRef(0);
   const scrollDirRef = useRef<number | undefined>(undefined);
-  const handleWheel = useCallback((e: React.WheelEvent) => {
+  const wheelDivRef = useRef<HTMLDivElement>(null);
+  const handleWheel = useCallback((e: WheelEvent) => {
     if (status !== "IDLE") return;
     e.preventDefault();
 
@@ -133,6 +134,13 @@ export default function CommandCenter() {
       }
     }
   }, [status, setTargetMinutes]);
+
+  useEffect(() => {
+    const el = wheelDivRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
 
   // State labels and colors
   let stateLbl = "Idle";
@@ -207,7 +215,7 @@ export default function CommandCenter() {
 
           {/* Rolling digits — scroll to select in IDLE */}
           <div
-            onWheel={!isWater ? handleWheel : undefined}
+            ref={!isWater ? wheelDivRef : undefined}
             style={{
               cursor: isIdle && !isWater ? "ns-resize" : undefined,
               position: "relative",
@@ -345,20 +353,6 @@ export default function CommandCenter() {
           {renderTimerContent(true)}
         </div>
 
-        {/* Left flank */}
-        <div
-          className="absolute z-30 transition-all duration-700 ease-in-out"
-          style={{
-            top: "50%", transform: "translateY(-50%)", left: "2vw", width: 260,
-            opacity: windowWidth < 1150 || isMini ? 0 : 1,
-            pointerEvents: windowWidth < 1150 || isMini ? "none" : "auto",
-            background: "rgba(0,0,0,0.75)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "16px 20px",
-          }}
-        >
-          <CalendarNextUp />
-        </div>
-
         {/* Right flank */}
         <div
           className="absolute z-30 transition-all duration-700 ease-in-out"
@@ -380,8 +374,20 @@ export default function CommandCenter() {
           className="flex-1 flex flex-col transition-colors duration-500"
           style={{ minHeight: 150, background: botBg === "transparent" ? undefined : botBg }}
         >
-          <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: "20px 30px" }}>
-            <CompactWhirlwind />
+          <div className="flex-1 flex overflow-hidden" style={{ padding: "20px 30px", gap: 0 }}>
+            {/* Goal selector — hidden when GoalStatsPanel is visible in the timer zone */}
+            {windowWidth < 1150 && (
+              <div
+                className="flex-none flex flex-col overflow-hidden"
+                style={{ width: 200, paddingRight: 24, borderRight: "1px solid rgba(255,255,255,0.06)" }}
+              >
+                <GoalSelector />
+              </div>
+            )}
+            {/* Whirlwind tasks */}
+            <div className="flex-1 flex flex-col overflow-hidden" style={{ paddingLeft: windowWidth < 1150 ? 24 : 0 }}>
+              <CompactTasks />
+            </div>
           </div>
         </div>
       )}

@@ -43,7 +43,8 @@ export interface NarrativeLogsTable {
 }
 
 export interface TagsTable {
-  id: string;
+  id: string;       // UUID for new tags; legacy slug for backfilled rows
+  name: string;     // display name
   rpg_attribute: string;
   color_hex: string | null;
 }
