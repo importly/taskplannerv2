@@ -12,7 +12,7 @@ export function TagManager() {
 
   const [newTag, setNewTag] = useState({ name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ id: "", name: "", rpg_attribute: "", color_hex: "" });
+  const [editForm, setEditForm] = useState({ id: "", name: "", rpg_attribute: "", color_hex: "#E1FF00" });
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -48,6 +48,7 @@ export function TagManager() {
       setConfirmingDeleteId(null);
     } catch (err) {
       console.error("Failed to delete tag", err);
+      setConfirmingDeleteId(null);
     }
   };
 
