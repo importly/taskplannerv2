@@ -14,14 +14,15 @@ export const CompactTasks = () => {
 
   const getDueStatus = (dueDate: string | null) => {
     if (!dueDate) return null;
-    const date = new Date(dueDate);
+    // MS Graph stores date-only due dates as UTC midnight. Compare by calendar day,
+    // not by instant, so a task due today is not flagged late before EOD.
+    const d = new Date(dueDate);
+    const dueDay = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
     const now = new Date();
-    if (date < now) return { label: "late", color: "text-danger bg-danger/10" };
-    
-    const diff = date.getTime() - now.getTime();
-    const days = diff / (1000 * 60 * 60 * 24);
-    if (days <= 1) return { label: "soon", color: "text-orange-400 bg-orange-400/10" };
-    
+    const todayDay = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const dayDiff = Math.round((dueDay - todayDay) / 86400000);
+    if (dayDiff < 0) return { label: "late", color: "text-danger bg-danger/10" };
+    if (dayDiff <= 1) return { label: "soon", color: "text-orange-400 bg-orange-400/10" };
     return null;
   };
 

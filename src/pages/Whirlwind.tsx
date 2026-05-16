@@ -179,8 +179,17 @@ function TaskRow({ task, goals, onComplete, onLink }: { task: any; goals: any[];
   const [hovered, setHovered] = useState(false);
   const linkedGoal = goals.find(g => g.id === task.linked_goal_id);
   const dueDate = task.due_date ? new Date(task.due_date) : null;
-  const isOverdue = dueDate && dueDate < new Date();
-  const isSoon = dueDate && !isOverdue && dueDate < new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+  // Compare by calendar day. MS Graph stores date-only dues at UTC midnight; comparing
+  // wall-clock instants flips a due-today task to overdue partway through the day.
+  const dueDayDiff = dueDate
+    ? Math.round(
+        (Date.UTC(dueDate.getUTCFullYear(), dueDate.getUTCMonth(), dueDate.getUTCDate()) -
+          Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())) /
+          86400000,
+      )
+    : null;
+  const isOverdue = dueDayDiff !== null && dueDayDiff < 0;
+  const isSoon = dueDayDiff !== null && dueDayDiff >= 0 && dueDayDiff <= 1;
 
   return (
     <div

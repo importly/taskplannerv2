@@ -29,12 +29,12 @@ export function getLevelProgress(xp: number): number {
 }
 
 export const ATTRIBUTE_COLORS: Record<string, string> = {
+  Research: "#30D158",
+  "ML/Math": "#FF9500",
   Systems: "#E1FF00",
   Algorithms: "#00E5FF",
-  Logic: "#FF9500",
+  Engineering: "#BF5AF2",
   Communication: "#FF2D55",
-  Knowledge: "#30D158",
-  Craft: "#BF5AF2",
 };
 
 export function getAttributeColor(attrName: string, tags?: { rpg_attribute: string, color_hex: string | null }[]): string {

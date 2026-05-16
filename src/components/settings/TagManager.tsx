@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { useAllTags, useCreateTag, useUpdateTag, useDeleteTag } from "../../db/gamificationHooks";
 
-const ATTRIBUTES = ["Systems", "Algorithms", "Logic", "Communication", "Knowledge", "Craft"];
+const ATTRIBUTES = ["Research", "ML/Math", "Systems", "Algorithms", "Engineering", "Communication"];
 
 export function TagManager() {
   const { data: tags, isLoading } = useAllTags();
@@ -10,7 +10,7 @@ export function TagManager() {
   const updateTag = useUpdateTag();
   const deleteTag = useDeleteTag();
 
-  const [newTag, setNewTag] = useState({ name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
+  const [newTag, setNewTag] = useState({ name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#30D158" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ id: "", name: "", rpg_attribute: "", color_hex: "#E1FF00" });
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);

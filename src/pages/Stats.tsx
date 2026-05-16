@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useGlobalStats, useStreak, useXpByAttribute, useDailyFocusMinutes } from "../db/gamificationHooks";
 import { getLevel, getLevelProgress, ATTRIBUTE_COLORS } from "../lib/xp";
 
-const ATTRIBUTES = ["Systems", "Algorithms", "Logic", "Communication", "Knowledge", "Craft"];
+const ATTRIBUTES = ["Research", "ML/Math", "Systems", "Algorithms", "Engineering", "Communication"];
 
 export default function Stats() {
   const { data: globalStats } = useGlobalStats();
