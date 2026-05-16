@@ -1,4 +1,4 @@
-import { useStreak, useGlobalStats } from "../../db/gamificationHooks";
+import { useStreak, useTodayFocusMinutes } from "../../db/gamificationHooks";
 import { useGoals } from "../../db/goalHooks";
 import { useTimerStore } from "../../stores/timerStore";
 import { useSessionStore } from "../../stores/sessionStore";
@@ -7,14 +7,13 @@ import { Target } from "lucide-react";
 const GOAL_COLORS = ["#0A84FF", "#30D158", "#BF5AF2", "#FF9500", "#FF2D55"];
 
 export const GoalStatsPanel = () => {
-  const { data: globalStats } = useGlobalStats();
+  const { data: todayMins = 0 } = useTodayFocusMinutes();
   const { data: streak } = useStreak();
   const { status } = useTimerStore();
   const linkedGoalId = useSessionStore((s) => s.linkedGoalId);
   const setGoal = useSessionStore((s) => s.setGoal);
   const { data: goals = [] } = useGoals();
 
-  const totalMins = Math.floor(globalStats?.totalFocusMinutes || 0);
   const isActive = status === "ACTIVE" || status === "PAUSED";
 
   return (
@@ -26,7 +25,7 @@ export const GoalStatsPanel = () => {
       <div className="flex" style={{ gap: 16, marginBottom: 14 }}>
         <div>
           <div className="text-sm font-mono text-white/40">Focus</div>
-          <div className="text-lg font-mono text-white" style={{ marginTop: 2 }}>{totalMins}m</div>
+          <div className="text-lg font-mono text-white" style={{ marginTop: 2 }}>{todayMins}m</div>
         </div>
         <div style={{ width: 1, background: "rgba(255,255,255,0.06)", alignSelf: "stretch" }} />
         <div>

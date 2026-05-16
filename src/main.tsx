@@ -6,7 +6,6 @@ import { onOpenUrl, getCurrent } from "@tauri-apps/plugin-deep-link";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { initDb } from "./db";
-import { exchangeCodeForToken } from "./services/googleAuth";
 import { exchangeMsCodeForToken } from "./services/msalAuth";
 
 async function handleDeepLinkUrls(urls: string[], closeAfter = false) {
@@ -15,15 +14,7 @@ async function handleDeepLinkUrls(urls: string[], closeAfter = false) {
     const code = urlObj.searchParams.get("code");
     if (!code) continue;
 
-    if (url.startsWith("accountability://oauth/callback")) {
-      try {
-        await initDb();
-        await exchangeCodeForToken(code);
-        await emit("google-auth-complete");
-      } catch (e) {
-        console.error("Google OAuth callback failed:", e);
-      }
-    } else if (url.startsWith("accountability://ms-callback")) {
+    if (url.startsWith("accountability://ms-callback")) {
       try {
         await initDb();
         await exchangeMsCodeForToken(code);

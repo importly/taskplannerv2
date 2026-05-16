@@ -30,7 +30,8 @@
     "deep-link": {
       "desktop": {
         "schemes": [
-          "accountability"
+          "accountability",
+          "com.aryan.accountability"
         ]
       }
     }

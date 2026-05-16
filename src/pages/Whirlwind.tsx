@@ -66,7 +66,7 @@ export default function Whirlwind() {
           <RefreshCcw size={24} color="#E1FF00" />
         </div>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 6 }}>Whirlwind Sync</div>
+          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 6 }}>Tasks Sync</div>
           <div style={{ fontSize: 12, color: "#48484A" }}>Connect Microsoft account to sync To Do tasks.</div>
         </div>
         <button
@@ -83,7 +83,7 @@ export default function Whirlwind() {
     <div className="no-scrollbar" style={{ padding: "28px 32px", maxWidth: 760, margin: "0 auto" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>Whirlwind</div>
+        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>Tasks</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             onClick={() => syncTasks()}

@@ -1,6 +1,6 @@
 import { useCachedTasks, useCompleteTask } from "../../db/taskHooks";
 
-export const CompactWhirlwind = () => {
+export const CompactTasks = () => {
   const { data: tasks = [], isLoading } = useCachedTasks();
   const completeTaskMutation = useCompleteTask();
 
@@ -28,7 +28,7 @@ export const CompactWhirlwind = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col h-full">
-        <div className="text-sm font-bold tracking-[0.12em] text-white/60 uppercase" style={{ marginBottom: 16 }}>Whirlwind</div>
+        <div className="text-sm font-bold tracking-[0.12em] text-white/60 uppercase" style={{ marginBottom: 16 }}>Tasks</div>
         <div className="flex flex-col gap-3 mt-2">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-6 w-full bg-white/5 animate-pulse rounded" />
@@ -40,7 +40,7 @@ export const CompactWhirlwind = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="text-sm font-bold tracking-[0.12em] text-white/60 uppercase" style={{ marginBottom: 16 }}>Whirlwind</div>
+      <div className="text-sm font-bold tracking-[0.12em] text-white/60 uppercase" style={{ marginBottom: 16 }}>Tasks</div>
       <div className="flex flex-col">
         {sortedTasks.length > 0 ? (
           sortedTasks.map((task, i) => {
@@ -62,7 +62,7 @@ export const CompactWhirlwind = () => {
                   onClick={() => completeTaskMutation.mutate({ taskId: task.ms_task_id, listId: task.list_id || "" })}
                   className="w-5 h-5 rounded-full border-[2px] border-white/30 shrink-0 hover:bg-white/20 transition-colors"
                 />
-                <div className="text-lg text-white/80 truncate flex-1 min-w-0 group-hover:text-white transition-colors">
+                <div className="text-sm text-white/80 truncate flex-1 min-w-0 group-hover:text-white transition-colors">
                   {task.title}
                 </div>
                 {dueStatus && (
@@ -74,7 +74,7 @@ export const CompactWhirlwind = () => {
             );
           })
         ) : (
-          <div className="text-base text-white/50 italic" style={{ padding: "8px 0" }}>No active tasks</div>
+          <div className="text-sm text-white/50 italic" style={{ padding: "4px 0" }}>No active tasks</div>
         )}
       </div>
     </div>

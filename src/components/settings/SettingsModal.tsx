@@ -1,6 +1,5 @@
-import { X, Settings, Calendar } from "lucide-react";
+import { X, Settings } from "lucide-react";
 import { TagManager } from "./TagManager";
-import { useGoogleCalendarAuth } from "../../db/calendarHooks";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -8,7 +7,6 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
-  const { isConnected, disconnect } = useGoogleCalendarAuth();
   if (!isOpen) return null;
 
   return (
@@ -76,57 +74,6 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           className="no-scrollbar"
           style={{ flex: 1, overflowY: "auto", padding: "28px 28px 36px" }}
         >
-          {/* Google Calendar section */}
-          <section style={{ marginBottom: 36 }}>
-            <div
-              className="font-mono flex items-center"
-              style={{
-                fontSize: 10, fontWeight: 600, letterSpacing: "0.1em",
-                textTransform: "uppercase", color: "#8E8E93",
-                marginBottom: 14, gap: 6,
-              }}
-            >
-              <Calendar size={12} />
-              Google Calendar
-            </div>
-
-            <div
-              className="flex items-center justify-between"
-              style={{
-                padding: "16px 18px",
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 12,
-              }}
-            >
-              <div className="flex items-center" style={{ gap: 12 }}>
-                <div
-                  style={{
-                    width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-                    background: isConnected ? "#30D158" : "rgba(255,255,255,0.15)",
-                    boxShadow: isConnected ? "0 0 8px rgba(48,209,88,0.5)" : "none",
-                  }}
-                />
-                <span style={{ fontSize: 14, color: isConnected ? "rgba(255,255,255,0.85)" : "#8E8E93" }}>
-                  {isConnected ? "Connected to Google Calendar" : "Not connected"}
-                </span>
-              </div>
-              {isConnected && (
-                <button
-                  onClick={() => disconnect()}
-                  className="font-mono"
-                  style={{
-                    fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
-                    textTransform: "uppercase", color: "#FF3B30",
-                    background: "transparent", border: "none", cursor: "pointer",
-                  }}
-                >
-                  Disconnect
-                </button>
-              )}
-            </div>
-          </section>
-
           {/* Tag Manager */}
           <TagManager />
         </div>

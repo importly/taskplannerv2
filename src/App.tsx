@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initDb } from "./db";
@@ -6,12 +6,20 @@ import { useEnforcer } from "./hooks/useEnforcer";
 import { ReflectionModal } from "./components/timer/ReflectionModal";
 import { SettingsModal } from "./components/settings/SettingsModal";
 import { Settings, Minus, Square, X } from "lucide-react";
-import CommandCenter from "./pages/CommandCenter";
-import GoalsDashboard from "./pages/GoalsDashboard";
-import Whirlwind from "./pages/Whirlwind";
-import Stats from "./pages/Stats";
 
-const queryClient = new QueryClient();
+// Lazy load pages for better performance
+const CommandCenter = lazy(() => import("./pages/CommandCenter"));
+const GoalsDashboard = lazy(() => import("./pages/GoalsDashboard"));
+const Whirlwind = lazy(() => import("./pages/Whirlwind"));
+const Stats = lazy(() => import("./pages/Stats"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 type Page = "command-center" | "goals" | "whirlwind" | "stats";
 
 function AppShell() {
@@ -73,7 +81,7 @@ function AppShell() {
                 transform: page === p ? "scale(1)" : "scale(0.97)",
               }}
             >
-              {p === "command-center" ? "Focus" : p.charAt(0).toUpperCase() + p.slice(1)}
+              {p === "command-center" ? "Focus" : p === "whirlwind" ? "Tasks" : p.charAt(0).toUpperCase() + p.slice(1)}
             </button>
           ))}
         </div>
@@ -99,10 +107,12 @@ function AppShell() {
 
       <main className="no-scrollbar" style={{ flex: 1, overflow: page === "command-center" ? "hidden" : "auto", background: "#000", padding: 0 }}>
         <div key={page} style={{ height: "100%", animation: "page-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards" }}>
-          {page === "command-center" && <CommandCenter />}
-          {page === "goals" && <GoalsDashboard />}
-          {page === "whirlwind" && <Whirlwind />}
-          {page === "stats" && <Stats />}
+          <Suspense fallback={<div style={{ height: "100%", background: "#000" }} />}>
+            {page === "command-center" && <CommandCenter />}
+            {page === "goals" && <GoalsDashboard />}
+            {page === "whirlwind" && <Whirlwind />}
+            {page === "stats" && <Stats />}
+          </Suspense>
         </div>
       </main>
 
