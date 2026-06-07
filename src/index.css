@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
-@import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/700.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -16,8 +15,8 @@
   --color-accent: #E1FF00;
   --color-danger: #FF3B30;
 
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  --font-sans: "Geist Variable", sans-serif;
+  --font-timer: "JetBrains Mono", "Geist Variable", sans-serif;
 }
 
 @layer base {
@@ -35,7 +34,7 @@
     height: 100%;
     background: #000000;
     color: #ffffff;
-    font-family: var(--font-sans), system-ui, sans-serif;
+    font-family: var(--font-sans);
     overscroll-behavior: none;
     overflow: hidden;
   }
@@ -203,6 +202,10 @@
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
+  .timer-digits {
+    font-family: var(--font-timer);
+    font-variant-numeric: tabular-nums;
+  }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
@@ -218,4 +221,3 @@
     @apply font-sans;
   }
 }
-

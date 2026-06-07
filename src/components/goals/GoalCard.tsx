@@ -48,7 +48,7 @@ export function GoalCard({ title, progress, totalFocusTimeSeconds, colorIndex, o
       </div>
 
       {/* Stats Row */}
-      <div className="font-mono text-[13px] text-[#8E8E93]">
+      <div className="text-[13px] text-[#8E8E93]">
         <span className="text-white/70 font-medium">{h}h {m}m</span> total
       </div>
 
@@ -58,7 +58,7 @@ export function GoalCard({ title, progress, totalFocusTimeSeconds, colorIndex, o
           <span className="text-[11px] text-[#3A3A3C] font-bold tracking-[0.08em] uppercase">
             Progress
           </span>
-          <span className="font-mono text-[11px] font-bold" style={{ color: accentColor }}>
+          <span className="text-[11px] font-bold" style={{ color: accentColor }}>
             {progress}%
           </span>
         </div>

@@ -22,7 +22,7 @@ export const CompactTasks = () => {
     const todayDay = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
     const dayDiff = Math.round((dueDay - todayDay) / 86400000);
     if (dayDiff < 0) return { label: "late", color: "text-danger bg-danger/10" };
-    if (dayDiff <= 1) return { label: "soon", color: "text-orange-400 bg-orange-400/10" };
+    if (dayDiff === 0) return { label: "soon", color: "text-orange-400 bg-orange-400/10" };
     return null;
   };
 
@@ -67,7 +67,7 @@ export const CompactTasks = () => {
                   {task.title}
                 </div>
                 {dueStatus && (
-                  <div className={`text-xs font-mono rounded-full shrink-0 ${dueStatus.color}`} style={{ padding: "2px 8px" }}>
+                  <div className={`text-xs rounded-full shrink-0 ${dueStatus.color}`} style={{ padding: "2px 8px" }}>
                     {dueStatus.label}
                   </div>
                 )}

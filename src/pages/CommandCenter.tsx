@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useTimerStore } from "../stores/timerStore";
-import { GoalStatsPanel } from "../components/cc/GoalStatsPanel";
+import { useSessionStore } from "../stores/sessionStore";
 import { GoalSelector } from "../components/cc/GoalSelector";
 import { CompactTasks } from "../components/cc/CompactWhirlwind";
 import { HeatmapStrip } from "../components/cc/HeatmapStrip";
 import { RollingDigits } from "../components/timer/RollingDigits";
+import { Clock, TimerReset } from "lucide-react";
 
 export default function CommandCenter() {
-  const { status, startTime, focusElapsedSeconds, start, pause, resume, stop, penalized, targetMinutes, setTargetMinutes } = useTimerStore();
+  const { status, timerMode, startTime, focusElapsedSeconds, start, pause, resume, stop, penalized, targetMinutes, setTargetMinutes, setTimerMode } = useTimerStore();
+  const openManualSession = useSessionStore((state) => state.openManualSession);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [displayTime, setDisplayTime] = useState(() => {
+    if (timerMode === "stopwatch") return "00:00";
     const m = String(targetMinutes).padStart(2, "0");
     return targetMinutes >= 60
       ? `${String(Math.floor(targetMinutes / 60)).padStart(2, "0")}:${String(targetMinutes % 60).padStart(2, "0")}:00`
@@ -31,8 +34,17 @@ export default function CommandCenter() {
   const animPRef = useRef(0);
   const lastTimeStrRef = useRef("");
 
-  // Format countdown time
-  const formatTime = useCallback((currentSeconds: number, targetSecs: number) => {
+  const formatElapsedTime = useCallback((currentSeconds: number) => {
+    const totalSeconds = Math.max(0, Math.floor(currentSeconds));
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+
+    if (h > 0) return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }, []);
+
+  const formatCountdownTime = useCallback((currentSeconds: number, targetSecs: number) => {
     let remaining = targetSecs - currentSeconds;
     const isNeg = remaining < 0;
     remaining = Math.abs(remaining);
@@ -43,6 +55,13 @@ export default function CommandCenter() {
     const sign = isNeg ? "-" : "";
     if (h > 0) return `${sign}${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
     return `${sign}${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }, []);
+
+  const formatIdleCountdown = useCallback((minutes: number) => {
+    if (minutes >= 60) {
+      return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}:00`;
+    }
+    return `${String(minutes).padStart(2, "0")}:00`;
   }, []);
 
   // Derive target configuration
@@ -70,14 +89,12 @@ export default function CommandCenter() {
 
       // Update digit state only when the string actually changes (~1/sec)
       const timeStr = status === "IDLE"
-        ? (() => {
-            const tm = useTimerStore.getState().targetMinutes;
-            if (tm >= 60) {
-              return `${String(Math.floor(tm / 60)).padStart(2, "0")}:${String(tm % 60).padStart(2, "0")}:00`;
-            }
-            return `${String(tm).padStart(2, "0")}:00`;
-          })()
-        : formatTime(currentSeconds, targetSeconds);
+        ? timerMode === "stopwatch"
+          ? "00:00"
+          : formatIdleCountdown(useTimerStore.getState().targetMinutes)
+        : timerMode === "stopwatch"
+          ? formatElapsedTime(currentSeconds)
+          : formatCountdownTime(currentSeconds, targetSeconds);
 
       if (timeStr !== lastTimeStrRef.current) {
         lastTimeStrRef.current = timeStr;
@@ -107,14 +124,14 @@ export default function CommandCenter() {
     return () => {
       if (reqRef.current !== undefined) cancelAnimationFrame(reqRef.current);
     };
-  }, [status, startTime, focusElapsedSeconds, penalized, targetMinutes, getConfig, formatTime]);
+  }, [status, timerMode, startTime, focusElapsedSeconds, penalized, targetMinutes, getConfig, formatElapsedTime, formatCountdownTime, formatIdleCountdown]);
 
   // Scroll-to-select handler (IDLE only)
   const scrollAccum = useRef(0);
   const scrollDirRef = useRef<number | undefined>(undefined);
   const wheelDivRef = useRef<HTMLDivElement>(null);
   const handleWheel = useCallback((e: WheelEvent) => {
-    if (status !== "IDLE") return;
+    if (status !== "IDLE" || timerMode !== "countdown") return;
     e.preventDefault();
 
     scrollAccum.current += e.deltaY;
@@ -124,16 +141,16 @@ export default function CommandCenter() {
       const steps = Math.sign(scrollAccum.current); // +1 = scroll down, -1 = scroll up
       scrollAccum.current = 0;
 
-      // scroll up (+1 after negation) = increase, scroll down (-1) = decrease
-      scrollDirRef.current = -steps;
+      // reversed: scroll down (+1) = increase, scroll up (-1) = decrease
+      scrollDirRef.current = steps;
 
       const current = useTimerStore.getState().targetMinutes;
-      const next = Math.max(1, Math.min(180, current - steps));
+      const next = Math.max(1, Math.min(180, current + steps));
       if (next !== current) {
         setTargetMinutes(next);
       }
     }
-  }, [status, setTargetMinutes]);
+  }, [status, timerMode, setTargetMinutes]);
 
   useEffect(() => {
     const el = wheelDivRef.current;
@@ -142,39 +159,27 @@ export default function CommandCenter() {
     return () => el.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
 
-  // State labels and colors
-  let stateLbl = "Idle";
-  let airLblClass = "text-white/60";
+  // Per-state colors (state label removed — see phone view for tasks list).
   let airDigColor = "rgba(255,255,255,0.5)";
-  let waterLblClass = "text-black/45";
   let waterDigColor = "rgba(0,0,0,1)";
   let waterBtnClass = "bg-black/10 text-black/65 border-black/15";
   let botBg = "transparent";
   let topBorder = "rgba(255,255,255,0.06)";
 
   if (penalized) {
-    stateLbl = "PENALIZED - 0 XP";
-    airLblClass = "text-[#FF3B30]";
     airDigColor = "#FF3B30";
-    waterLblClass = "text-white/75";
     waterDigColor = "rgba(255,255,255,1)";
     waterBtnClass = "bg-black/15 text-white border-white/15";
     botBg = "rgba(255,59,48,0.06)";
     topBorder = "#FF3B30";
   } else if (status === "ACTIVE") {
-    stateLbl = "Active";
-    airLblClass = "text-[#E1FF00]/65";
     airDigColor = "rgba(255,255,255,1)";
-    waterLblClass = "text-black/45";
     waterDigColor = "rgba(0,0,0,1)";
     waterBtnClass = "bg-black/10 text-black/65 border-black/15";
     botBg = "transparent";
     topBorder = "#E1FF00";
   } else if (status === "PAUSED") {
-    stateLbl = "Paused";
-    airLblClass = "text-white/50";
     airDigColor = "rgba(255,255,255,0.4)";
-    waterLblClass = "text-white/20";
     waterDigColor = "rgba(255,255,255,0.3)";
     waterBtnClass = "bg-white/5 text-white/50 border-white/10";
     botBg = "rgba(255,255,255,0.05)";
@@ -184,46 +189,109 @@ export default function CommandCenter() {
   const hasHours = displayTime.split(":").length > 2;
   const fontSize = hasHours ? "clamp(72px, 11vw, 180px)" : "clamp(96px, 15vw, 240px)";
 
-  // Dual layer rendering
-  const fmtIdleMinutes = (n: number) => {
-    if (n >= 60) return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}:00`;
-    return `${String(n).padStart(2, "0")}:00`;
+  const renderModeSwitcher = () => {
+    const locked = status !== "IDLE";
+    const compact = windowWidth < 760;
+    const modes = [
+      { mode: "countdown" as const, label: "Countdown", icon: TimerReset },
+      { mode: "stopwatch" as const, label: "Stopwatch", icon: Clock },
+    ];
+
+    return (
+      <div
+        className="absolute z-40 transition-all duration-500 ease-in-out"
+        style={{
+          top: compact ? 14 : "50%",
+          left: compact ? 12 : "2vw",
+          transform: compact ? undefined : "translateY(-50%)",
+          width: compact ? 44 : 136,
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          padding: 6,
+          background: "rgba(0,0,0,0.75)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: 10,
+          pointerEvents: "auto",
+        }}
+        aria-label="Timer mode"
+      >
+        {modes.map(({ mode, label, icon: Icon }) => {
+          const active = timerMode === mode;
+          return (
+            <button
+              key={mode}
+              onClick={() => setTimerMode(mode)}
+              disabled={locked}
+              aria-pressed={active}
+              title={locked ? "Mode locks while a session is running" : label}
+              style={{
+                height: compact ? 32 : 38,
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: compact ? "center" : "flex-start",
+                gap: compact ? 0 : 8,
+                padding: compact ? 0 : "0 10px",
+                borderRadius: 7,
+                border: active ? "1px solid rgba(225,255,0,0.28)" : "1px solid transparent",
+                background: active ? "rgba(225,255,0,0.12)" : "transparent",
+                color: active ? "#E1FF00" : "rgba(255,255,255,0.45)",
+                cursor: locked ? "not-allowed" : "pointer",
+                opacity: locked && !active ? 0.35 : 1,
+                transition: "background 180ms ease, color 180ms ease, border-color 180ms ease, opacity 180ms ease",
+              }}
+            >
+              <Icon size={15} strokeWidth={2} />
+              {!compact && (
+                <span
+                  className="uppercase"
+                  style={{ fontSize: 10, letterSpacing: "0.08em", fontWeight: 700, lineHeight: 1 }}
+                >
+                  {label}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
   };
 
   const renderTimerContent = (isWater: boolean) => {
     const isIdle = status === "IDLE";
+    const isCountdownIdle = isIdle && timerMode === "countdown";
     const digColor = isWater ? waterDigColor : airDigColor;
     // 3 ghost rows above (n-3 … n-1, top→bottom) and below (n+1 … n+3, top→bottom)
-    const ghostsAbove = isIdle && !isWater
-      ? [3, 2, 1].map(off => { const v = targetMinutes - off; return v >= 1 ? fmtIdleMinutes(v) : null; })
+    const ghostsAbove = isCountdownIdle && !isWater
+      ? [3, 2, 1].map(off => { const v = targetMinutes - off; return v >= 1 ? formatIdleCountdown(v) : null; })
       : [];
-    const ghostsBelow = isIdle && !isWater
-      ? [1, 2, 3].map(off => { const v = targetMinutes + off; return v <= 180 ? fmtIdleMinutes(v) : null; })
+    const ghostsBelow = isCountdownIdle && !isWater
+      ? [1, 2, 3].map(off => { const v = targetMinutes + off; return v <= 180 ? formatIdleCountdown(v) : null; })
       : [];
     const aboveOpacity = [0.05, 0.11, 0.19]; // farthest → closest
     const belowOpacity = [0.19, 0.11, 0.05]; // closest → farthest
-    const timerDirection = isIdle ? scrollDirRef.current : -1;
+    const timerDirection = isCountdownIdle ? scrollDirRef.current : -1;
 
     return (
       <div className={`absolute inset-0 flex items-center justify-center ${isWater ? "z-10 pointer-events-none" : "z-0"}`}>
         <div className="flex flex-col items-center text-center relative z-10"
           style={{ transform: isIdle ? "scale(0.9)" : "scale(1)", transition: "transform 0.5s ease" }}
         >
-          <div className={`text-xs font-bold tracking-[0.14em] uppercase ${isWater ? waterLblClass : airLblClass}`} style={{ marginBottom: 16 }}>
-            {stateLbl}
-          </div>
 
           {/* Rolling digits — scroll to select in IDLE */}
           <div
             ref={!isWater ? wheelDivRef : undefined}
             style={{
-              cursor: isIdle && !isWater ? "ns-resize" : undefined,
+              cursor: isCountdownIdle && !isWater ? "ns-resize" : undefined,
               position: "relative",
               overflow: "visible",
             }}
           >
             {/* Ghost stacks — 3 rows above and below */}
-            {isIdle && !isWater && (
+            {isCountdownIdle && !isWater && (
               <>
                 {/* Above: translateY(-100%) shifts the whole stack up by its own height */}
                 <div style={{
@@ -237,7 +305,7 @@ export default function CommandCenter() {
                       key={i}
                       value={val}
                       direction={timerDirection}
-                      className="font-mono font-bold"
+                      className="timer-digits font-bold"
                       style={{ fontSize, letterSpacing: "-0.04em", color: `rgba(255,255,255,${aboveOpacity[i]})`, whiteSpace: "nowrap" }}
                     />
                   ) : <div key={i} style={{ height: "1em", fontSize }} />)}
@@ -255,7 +323,7 @@ export default function CommandCenter() {
                       key={i}
                       value={val}
                       direction={timerDirection}
-                      className="font-mono font-bold"
+                      className="timer-digits font-bold"
                       style={{ fontSize, letterSpacing: "-0.04em", color: `rgba(255,255,255,${belowOpacity[i]})`, whiteSpace: "nowrap" }}
                     />
                   ) : <div key={i} style={{ height: "1em", fontSize }} />)}
@@ -266,7 +334,7 @@ export default function CommandCenter() {
             <RollingDigits
               value={displayTime}
               direction={timerDirection}
-              className="font-mono font-bold"
+              className="timer-digits font-bold"
               style={{
                 fontSize,
                 letterSpacing: "-0.04em",
@@ -277,8 +345,8 @@ export default function CommandCenter() {
           </div>
 
           {/* Scroll hint in IDLE */}
-          {isIdle && !isWater && (
-            <div className="font-mono text-[10px] uppercase tracking-[0.12em]"
+          {isCountdownIdle && !isWater && (
+            <div className="text-[10px] uppercase tracking-[0.12em]"
               style={{ color: "#3A3A3C", marginTop: 14 }}
             >
               scroll to set · min
@@ -308,15 +376,28 @@ export default function CommandCenter() {
             return (
               <div className="flex justify-center" style={{ gap: 16, marginTop: isIdle ? 24 : 32, minHeight: 48, pointerEvents: isWater ? "none" : "auto" }}>
                 {isIdle ? (
-                  <H>
-                    <button
-                      onClick={start}
-                      style={{ padding: "12px 32px" }}
-                      className={`rounded-full text-base font-semibold transition-all hover:scale-105 active:scale-95 ${isWater ? waterBtnClass : "bg-[#E1FF00] text-black"}`}
-                    >
-                      Start Session
-                    </button>
-                  </H>
+                  <>
+                    <H>
+                      <button
+                        onClick={start}
+                        style={{ padding: "12px 32px" }}
+                        className={`rounded-full text-base font-semibold transition-all hover:scale-105 active:scale-95 ${isWater ? waterBtnClass : "bg-[#E1FF00] text-black"}`}
+                      >
+                        {timerMode === "stopwatch" ? "Start Stopwatch" : "Start Session"}
+                      </button>
+                    </H>
+                    {!isWater && (
+                      <H>
+                        <button
+                          onClick={openManualSession}
+                          style={{ padding: "12px 22px" }}
+                          className="rounded-full text-base font-semibold border border-white/15 bg-white/5 text-white/75 transition-all hover:bg-white/10 hover:text-white active:scale-95"
+                        >
+                          Log Missed Session
+                        </button>
+                      </H>
+                    )}
+                  </>
                 ) : status === "ACTIVE" ? (
                   <>
                     <H><button onClick={pause} style={{ padding: "10px 24px" }} className={`rounded-full text-sm font-semibold border transition-colors hover:bg-white/10 ${isWater ? waterBtnClass : "bg-white/5 text-white/90 border-white/20"}`}>Pause</button></H>
@@ -343,6 +424,8 @@ export default function CommandCenter() {
         {/* State indicator — 3px top edge */}
         <div className="absolute top-0 left-0 right-0 z-40 transition-colors duration-[350ms]" style={{ height: 3, background: topBorder }} />
 
+        {renderModeSwitcher()}
+
         {/* Air layer */}
         <div className="absolute inset-0 z-10">
           {renderTimerContent(false)}
@@ -364,7 +447,7 @@ export default function CommandCenter() {
             border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "16px 20px",
           }}
         >
-          <GoalStatsPanel />
+          <GoalSelector />
         </div>
       </div>
 
@@ -375,7 +458,7 @@ export default function CommandCenter() {
           style={{ minHeight: 150, background: botBg === "transparent" ? undefined : botBg }}
         >
           <div className="flex-1 flex overflow-hidden" style={{ padding: "20px 30px", gap: 0 }}>
-            {/* Goal selector — hidden when GoalStatsPanel is visible in the timer zone */}
+            {/* Goal selector hidden when the floating goal panel is visible in the timer zone */}
             {windowWidth < 1150 && (
               <div
                 className="flex-none flex flex-col overflow-hidden"

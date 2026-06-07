@@ -1,5 +1,6 @@
 import { X, Settings } from "lucide-react";
 import { TagManager } from "./TagManager";
+import { PhoneViewPanel } from "./PhoneViewPanel";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -18,10 +19,11 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
         className="flex flex-col w-full"
         style={{
           maxWidth: 680,
-          maxHeight: "88vh",
+          maxHeight: "85vh",
           background: "#0a0a0a",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 20,
+          overflow: "hidden",
         }}
       >
         {/* Header */}
@@ -49,7 +51,6 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 Settings
               </div>
               <div
-                className="font-mono"
                 style={{ fontSize: 10, color: "#48484A", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 2 }}
               >
                 Configure your environment
@@ -71,9 +72,17 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
         {/* Body */}
         <div
-          className="no-scrollbar"
-          style={{ flex: 1, overflowY: "auto", padding: "28px 28px 36px" }}
+          className="no-scrollbar flex flex-col"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            padding: "28px 28px 36px",
+            gap: 40,
+          }}
         >
+          {/* Phone View */}
+          <PhoneViewPanel />
           {/* Tag Manager */}
           <TagManager />
         </div>

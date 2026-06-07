@@ -1,8 +1,14 @@
 import React, { useState } from "react";
 import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { useAllTags, useCreateTag, useUpdateTag, useDeleteTag } from "../../db/gamificationHooks";
+import { ATTRIBUTE_COLORS } from "../../lib/xp";
 
 const ATTRIBUTES = ["Research", "ML/Math", "Systems", "Algorithms", "Engineering", "Communication"];
+const CANONICAL_COLORS = new Set(Object.values(ATTRIBUTE_COLORS).map(c => c.toLowerCase()));
+
+// True if color matches any canonical attribute color (i.e. user hasn't picked custom)
+const isCanonicalColor = (hex: string | null | undefined) =>
+  !!hex && CANONICAL_COLORS.has(hex.toLowerCase());
 
 export function TagManager() {
   const { data: tags, isLoading } = useAllTags();
@@ -10,17 +16,43 @@ export function TagManager() {
   const updateTag = useUpdateTag();
   const deleteTag = useDeleteTag();
 
-  const [newTag, setNewTag] = useState({ name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#30D158" });
+  const [newTag, setNewTag] = useState({
+    name: "",
+    rpg_attribute: ATTRIBUTES[0],
+    color_hex: ATTRIBUTE_COLORS[ATTRIBUTES[0]],
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ id: "", name: "", rpg_attribute: "", color_hex: "#E1FF00" });
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+
+  // Create form: when user changes attribute, sync color iff current color is canonical (default)
+  const handleNewAttributeChange = (attr: string) => {
+    setNewTag(prev => ({
+      ...prev,
+      rpg_attribute: attr,
+      color_hex: isCanonicalColor(prev.color_hex) ? ATTRIBUTE_COLORS[attr] : prev.color_hex,
+    }));
+  };
+
+  // Edit form: same smart sync — only overwrite if the current color is a canonical default
+  const handleEditAttributeChange = (attr: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      rpg_attribute: attr,
+      color_hex: isCanonicalColor(prev.color_hex) ? ATTRIBUTE_COLORS[attr] : prev.color_hex,
+    }));
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTag.name.trim()) return;
     try {
       await createTag.mutateAsync(newTag);
-      setNewTag({ name: "", rpg_attribute: ATTRIBUTES[0], color_hex: "#E1FF00" });
+      setNewTag({
+        name: "",
+        rpg_attribute: ATTRIBUTES[0],
+        color_hex: ATTRIBUTE_COLORS[ATTRIBUTES[0]],
+      });
     } catch (err) {
       console.error("Failed to create tag", err);
     }
@@ -29,7 +61,12 @@ export function TagManager() {
   const startEdit = (tag: { id: string; name: string; rpg_attribute: string; color_hex: string | null }) => {
     setConfirmingDeleteId(null);
     setEditingId(tag.id);
-    setEditForm({ id: tag.id, name: tag.name, rpg_attribute: tag.rpg_attribute, color_hex: tag.color_hex || "#E1FF00" });
+    setEditForm({
+      id: tag.id,
+      name: tag.name,
+      rpg_attribute: tag.rpg_attribute,
+      color_hex: tag.color_hex || ATTRIBUTE_COLORS[tag.rpg_attribute] || "#E1FF00",
+    });
   };
 
   const handleUpdate = async () => {
@@ -53,7 +90,7 @@ export function TagManager() {
   };
 
   if (isLoading) return (
-    <div className="font-mono text-xs uppercase tracking-widest text-white/20 animate-pulse" style={{ padding: 16 }}>
+    <div className="text-xs uppercase tracking-widest text-white/20 animate-pulse" style={{ padding: 16 }}>
       Loading tags...
     </div>
   );
@@ -72,36 +109,36 @@ export function TagManager() {
           onSubmit={handleAdd}
           className="grid items-end rounded-xl border border-white/5"
           style={{
-            gridTemplateColumns: "1fr 1fr auto auto",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
             padding: 20,
             gap: 12,
             background: "rgba(255,255,255,0.02)",
           }}
         >
-          <div className="flex flex-col" style={{ gap: 6 }}>
+          <div className="flex flex-col" style={{ gap: 6, minWidth: 0 }}>
             <label className="text-[9px] uppercase font-bold text-white/30 tracking-widest">Name</label>
             <input
               type="text"
-              placeholder="e.g. cuda"
+              placeholder="e.g. transformers"
               value={newTag.name}
               onChange={e => setNewTag({ ...newTag, name: e.target.value })}
               className="bg-black border border-white/10 rounded-lg text-sm outline-none focus:border-[#E1FF00] transition-colors placeholder:text-white/10"
-              style={{ padding: "9px 14px" }}
+              style={{ padding: "9px 14px", width: "100%" }}
               required
             />
           </div>
-          <div className="flex flex-col" style={{ gap: 6 }}>
+          <div className="flex flex-col" style={{ gap: 6, minWidth: 0 }}>
             <label className="text-[9px] uppercase font-bold text-white/30 tracking-widest">Attribute</label>
             <select
               value={newTag.rpg_attribute}
-              onChange={e => setNewTag({ ...newTag, rpg_attribute: e.target.value })}
+              onChange={e => handleNewAttributeChange(e.target.value)}
               className="bg-black border border-white/10 rounded-lg text-sm outline-none focus:border-[#E1FF00] transition-colors appearance-none cursor-pointer"
-              style={{ padding: "9px 14px" }}
+              style={{ padding: "9px 14px", width: "100%" }}
             >
               {ATTRIBUTES.map(attr => <option key={attr} value={attr}>{attr}</option>)}
             </select>
           </div>
-          <div className="flex flex-col" style={{ gap: 6 }}>
+          <div className="flex flex-col" style={{ gap: 6, minWidth: 0 }}>
             <label className="text-[9px] uppercase font-bold text-white/30 tracking-widest">Color</label>
             <div className="flex items-center" style={{ gap: 8 }}>
               <div
@@ -119,8 +156,8 @@ export function TagManager() {
                 type="text"
                 value={newTag.color_hex}
                 onChange={e => setNewTag({ ...newTag, color_hex: e.target.value })}
-                className="bg-black border border-white/10 rounded-lg text-xs font-mono outline-none focus:border-[#E1FF00] transition-colors uppercase"
-                style={{ padding: "9px 10px", width: 90 }}
+                className="bg-black border border-white/10 rounded-lg text-xs outline-none focus:border-[#E1FF00] transition-colors uppercase"
+                style={{ padding: "9px 10px", width: "100%", minWidth: 0 }}
               />
             </div>
           </div>
@@ -134,6 +171,7 @@ export function TagManager() {
               padding: "9px 20px",
               gap: 6,
               height: 38,
+              width: "100%",
               alignSelf: "flex-end",
             }}
           >
@@ -153,7 +191,7 @@ export function TagManager() {
         <div className="flex flex-col" style={{ gap: 8 }}>
           {tags?.length === 0 && (
             <div
-              className="text-center rounded-xl border border-dashed border-white/5 text-white/20 font-mono text-xs uppercase tracking-widest"
+              className="text-center rounded-xl border border-dashed border-white/5 text-white/20 text-xs uppercase tracking-widest"
               style={{ padding: 40 }}
             >
               No tags yet
@@ -204,7 +242,7 @@ export function TagManager() {
                     />
                     <select
                       value={editForm.rpg_attribute}
-                      onChange={e => setEditForm({ ...editForm, rpg_attribute: e.target.value })}
+                      onChange={e => handleEditAttributeChange(e.target.value)}
                       className="bg-black border border-white/10 rounded-lg text-xs outline-none focus:border-[#E1FF00] transition-colors appearance-none cursor-pointer"
                       style={{ padding: "6px 10px" }}
                     >
@@ -221,7 +259,7 @@ export function TagManager() {
                   </div>
                 ) : (
                   <div className="flex-1 flex items-center" style={{ gap: 10 }}>
-                    <span className="font-mono text-sm font-semibold text-white/90">{tag.name}</span>
+                    <span className="text-sm font-semibold text-white/90">{tag.name}</span>
                     <span
                       className="text-[9px] rounded font-bold uppercase tracking-[0.12em] text-white/40 border border-white/5"
                       style={{ padding: "3px 8px", background: "rgba(255,255,255,0.03)" }}
@@ -253,7 +291,7 @@ export function TagManager() {
                     </>
                   ) : isConfirmingDelete ? (
                     <>
-                      <span className="text-xs font-mono" style={{ color: "rgba(255,59,48,0.7)", marginRight: 4 }}>
+                      <span className="text-xs " style={{ color: "rgba(255,59,48,0.7)", marginRight: 4 }}>
                         Delete?
                       </span>
                       <button

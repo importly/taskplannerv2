@@ -79,7 +79,7 @@ export const TimerDisplay = () => {
 
       {/* Giant Digits */}
       <div
-        className={`font-mono font-black leading-none tracking-tighter transition-all duration-500 ${getStatusColorClass()}`}
+        className={`timer-digits font-black leading-none tracking-tighter transition-all duration-500 ${getStatusColorClass()}`}
         style={{ fontSize: 120, mixBlendMode: "difference" }}
       >
         {formatTime(displaySeconds)}
@@ -90,7 +90,7 @@ export const TimerDisplay = () => {
         {penaltyCountdown !== null && (
           <div className="flex items-center text-danger animate-pulse" style={{ gap: 8 }}>
             <AlertCircle size={16} />
-            <span className="font-mono text-sm uppercase tracking-wider">Penalty in {penaltyCountdown}s</span>
+            <span className="text-sm uppercase tracking-wider">Penalty in {penaltyCountdown}s</span>
           </div>
         )}
       </div>

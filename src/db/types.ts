@@ -1,4 +1,11 @@
 import type { Generated } from "kysely";
+import type {
+  EvidenceType,
+  GoalMetricCadence,
+  GoalMetricUnit,
+  ProjectArea,
+  ProjectStatus,
+} from "../lib/weeklyReview";
 
 export interface UserSettingsTable {
   key: string;
@@ -32,6 +39,10 @@ export interface FocusSessionsTable {
   break_duration_seconds: Generated<number>;
   penalized: Generated<number>;
   linked_goal_id: string | null;
+  linked_project_id: Generated<string | null>;
+  evidence_type: Generated<EvidenceType | null>;
+  evidence_url: Generated<string | null>;
+  evidence_note: Generated<string | null>;
 }
 
 export interface NarrativeLogsTable {
@@ -63,6 +74,60 @@ export interface XpLedgerTable {
   timestamp: Generated<string>;
 }
 
+export interface ProjectsTable {
+  id: string;
+  name: string;
+  area: ProjectArea;
+  status: ProjectStatus;
+  current_milestone: string | null;
+  next_action: string | null;
+  target_review_cadence_days: Generated<number>;
+  evidence_url: string | null;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
+export interface DailyPlansTable {
+  id: string;
+  plan_date: string;
+  primary_project_id: string | null;
+  primary_action: string | null;
+  success_evidence: string | null;
+  secondary_items: string | null;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
+export interface GoalMetricsTable {
+  id: string;
+  name: string;
+  unit: GoalMetricUnit;
+  cadence: GoalMetricCadence;
+  target: number;
+  linked_project_id: string | null;
+  archived_at: string | null;
+  created_at: Generated<string>;
+}
+
+export interface GoalMetricLogsTable {
+  id: string;
+  metric_id: string;
+  amount: number;
+  note: string | null;
+  logged_at: Generated<string>;
+}
+
+export interface WeeklyReviewsTable {
+  id: string;
+  week_start: string;
+  week_end: string;
+  biggest_blocker: string | null;
+  next_week_top_three: string | null;
+  markdown_snapshot: string | null;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
 export interface DatabaseSchema {
   user_settings: UserSettingsTable;
   goals: GoalsTable;
@@ -72,4 +137,9 @@ export interface DatabaseSchema {
   tags: TagsTable;
   session_tags: SessionTagsTable;
   xp_ledger: XpLedgerTable;
+  projects: ProjectsTable;
+  daily_plans: DailyPlansTable;
+  goal_metrics: GoalMetricsTable;
+  goal_metric_logs: GoalMetricLogsTable;
+  weekly_reviews: WeeklyReviewsTable;
 }

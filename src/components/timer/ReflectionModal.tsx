@@ -16,9 +16,12 @@ export const ReflectionModal = () => {
     selectedTagIds,
     linkedGoalId,
     journalContent,
+    isManualSessionOpen,
+    manualDurationMinutes,
     setTags,
     setGoal,
     setJournal,
+    setManualDurationMinutes,
     reset: resetSession,
   } = useSessionStore();
 
@@ -38,12 +41,24 @@ export const ReflectionModal = () => {
     },
   });
 
-  if (status !== "STOPPED") return null;
+  const isTimerReflection = status === "STOPPED";
+  const isManualReflection = !isTimerReflection && isManualSessionOpen;
+
+  if (!isTimerReflection && !isManualReflection) return null;
 
   const handleCommit = async () => {
     try {
-      await saveFocusSession();
-      commit();
+      if (isManualReflection) {
+        await saveFocusSession({
+          focusDurationSeconds: manualDurationMinutes * 60,
+          breakDurationSeconds: 0,
+          penalized: false,
+          endTimestamp: Date.now(),
+        });
+      } else {
+        await saveFocusSession();
+        commit();
+      }
       resetSession();
       // Invalidate all caches that depend on session/XP/gamification data
       queryClient.invalidateQueries({ queryKey: gamificationKeys.all });
@@ -54,7 +69,9 @@ export const ReflectionModal = () => {
   };
 
   const handleDiscard = () => {
-    discardTimer();
+    if (isTimerReflection) {
+      discardTimer();
+    }
     resetSession();
   };
 
@@ -62,14 +79,37 @@ export const ReflectionModal = () => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md" style={{ padding: "16px" }}>
       <div className="flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" style={{ background: "#000000", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", width: "100%", maxWidth: "672px", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}>
         <div style={{ padding: "32px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#ffffff", fontFamily: "var(--font-sans), sans-serif" }}>Session Complete</h2>
-          <p style={{ color: "#8E8E93", fontSize: "14px", marginTop: "8px", fontFamily: "var(--font-sans), sans-serif" }}>Reflect on your focus time.</p>
+          <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#ffffff", fontFamily: "var(--font-sans), sans-serif" }}>
+            {isManualReflection ? "Log Missed Session" : "Session Complete"}
+          </h2>
+          <p style={{ color: "#8E8E93", fontSize: "14px", marginTop: "8px", fontFamily: "var(--font-sans), sans-serif" }}>
+            {isManualReflection ? "Add focus time you already completed." : "Reflect on your focus time."}
+          </p>
         </div>
 
         <div className="overflow-y-auto no-scrollbar flex flex-col" style={{ padding: "32px", gap: "24px", maxHeight: "60vh" }}>
+          {isManualReflection && (
+            <div className="flex flex-col" style={{ gap: "10px" }}>
+              <label style={{ fontFamily: "var(--font-sans), sans-serif", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Duration</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <input
+                  type="number"
+                  min={1}
+                  max={600}
+                  step={5}
+                  value={manualDurationMinutes}
+                  onChange={(e) => setManualDurationMinutes(Number(e.target.value))}
+                  className="w-full focus:outline-none transition-colors"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "12px 14px", color: "#ffffff", fontSize: "14px", fontFamily: "var(--font-sans), sans-serif" }}
+                />
+                <span style={{ color: "#8E8E93", fontSize: "13px", fontWeight: 600 }}>min</span>
+              </div>
+            </div>
+          )}
+
           {/* Journal Field */}
           <div className="flex flex-col" style={{ gap: "10px" }}>
-            <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Journal / Narrative</label>
+            <label style={{ fontFamily: "var(--font-sans), sans-serif", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Journal / Narrative</label>
             <textarea
               className="w-full h-32 focus:outline-none transition-colors resize-none"
               style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "14px", color: "#ffffff", fontSize: "14px", fontFamily: "var(--font-sans), sans-serif" }}
@@ -81,7 +121,7 @@ export const ReflectionModal = () => {
 
           {/* Tag selection */}
           <div className="flex flex-col" style={{ gap: "10px" }}>
-            <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Tags</label>
+            <label style={{ fontFamily: "var(--font-sans), sans-serif", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Tags</label>
             <div className="flex flex-wrap" style={{ gap: "8px" }}>
               {tags.map((tag) => {
                 const isSelected = selectedTagIds.includes(tag.id);
@@ -108,7 +148,7 @@ export const ReflectionModal = () => {
                       transition: "all 0.2s ease"
                     }}
                   >
-                    {tag.rpg_attribute.toUpperCase()}
+                    {tag.name}
                   </button>
                 );
               })}
@@ -117,7 +157,7 @@ export const ReflectionModal = () => {
 
           {/* Goal linking */}
           <div className="flex flex-col" style={{ gap: "10px" }}>
-            <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Linked Goal</label>
+            <label style={{ fontFamily: "var(--font-sans), sans-serif", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}>Linked Goal</label>
             <select
               className="w-full focus:outline-none transition-colors appearance-none"
               style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "14px", color: "#ffffff", fontSize: "14px", fontFamily: "var(--font-sans), sans-serif" }}
@@ -137,9 +177,10 @@ export const ReflectionModal = () => {
         <div className="flex items-center" style={{ padding: "24px 32px", gap: "16px", borderTop: "1px solid rgba(255,255,255,0.08)", background: "#000000" }}>
           <button 
             onClick={handleCommit} 
-            style={{ flex: 1, background: "#E1FF00", color: "#000000", padding: "12px 24px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, fontFamily: "var(--font-sans), sans-serif", border: "none", cursor: "pointer", transition: "all 0.2s ease" }}
+            disabled={isManualReflection && manualDurationMinutes < 1}
+            style={{ flex: 1, background: "#E1FF00", color: "#000000", padding: "12px 24px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, fontFamily: "var(--font-sans), sans-serif", border: "none", cursor: isManualReflection && manualDurationMinutes < 1 ? "not-allowed" : "pointer", transition: "all 0.2s ease", opacity: isManualReflection && manualDurationMinutes < 1 ? 0.5 : 1 }}
           >
-            Commit Session
+            {isManualReflection ? "Save Manual Session" : "Commit Session"}
           </button>
           <button 
             onClick={handleDiscard} 

@@ -2,19 +2,29 @@ import { getDb } from "./index";
 import { useTimerStore } from "../stores/timerStore";
 import { useSessionStore } from "../stores/sessionStore";
 
+interface SaveFocusSessionOptions {
+  focusDurationSeconds?: number;
+  breakDurationSeconds?: number;
+  penalized?: boolean;
+  endTimestamp?: number;
+}
+
 /**
  * Persists a completed focus session to the database.
  * Follows the atomic write sequence defined in the Fluid Focus Engine spec.
  */
-export async function saveFocusSession() {
+export async function saveFocusSession(options: SaveFocusSessionOptions = {}) {
   const db = getDb();
   const timer = useTimerStore.getState();
   const session = useSessionStore.getState();
+  const focusDurationSeconds = options.focusDurationSeconds ?? timer.focusElapsedSeconds;
+  const breakDurationSeconds = options.breakDurationSeconds ?? timer.breakElapsedSeconds;
+  const penalized = options.penalized ?? timer.penalized;
 
   // Use the captured stoppedAt time as the authoritative end of the session.
   // This prevents drift if the user stays in the ReflectionModal for minutes.
-  const endTimestamp = timer.stoppedAt || Date.now();
-  const totalElapsedMs = (timer.focusElapsedSeconds + timer.breakElapsedSeconds) * 1000;
+  const endTimestamp = options.endTimestamp ?? timer.stoppedAt ?? Date.now();
+  const totalElapsedMs = (focusDurationSeconds + breakDurationSeconds) * 1000;
   const sessionStartTime = endTimestamp - totalElapsedMs;
   const startTimeStr = new Date(sessionStartTime).toISOString();
   const endTimeStr = new Date(endTimestamp).toISOString();
@@ -29,9 +39,9 @@ export async function saveFocusSession() {
       id: sessionId,
       start_time: startTimeStr,
       end_time: endTimeStr,
-      focus_duration_seconds: Math.floor(timer.focusElapsedSeconds),
-      break_duration_seconds: Math.floor(timer.breakElapsedSeconds),
-      penalized: timer.penalized ? 1 : 0,
+      focus_duration_seconds: Math.floor(focusDurationSeconds),
+      break_duration_seconds: Math.floor(breakDurationSeconds),
+      penalized: penalized ? 1 : 0,
       linked_goal_id: session.linkedGoalId,
     })
     .execute();
@@ -60,8 +70,8 @@ export async function saveFocusSession() {
       .execute();
   }
 
-  if (!timer.penalized && session.selectedTagIds.length > 0) {
-    const focusMinutes = Math.floor(timer.focusElapsedSeconds / 60);
+  if (!penalized && session.selectedTagIds.length > 0) {
+    const focusMinutes = Math.floor(focusDurationSeconds / 60);
     const totalXp = focusMinutes * 10;
 
     if (totalXp > 0) {

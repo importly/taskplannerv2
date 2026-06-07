@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Black rounded-square background. Tauri masks ICNS/Square logos to their
+       own shapes; the rounded corners keep things tidy on platforms that don't. -->
+  <rect width="1024" height="1024" rx="180" ry="180" fill="#000000"/>
+
+  <!-- Clock face: neon-yellow stroke circle (no fill so background shows). -->
+  <circle cx="512" cy="512" r="360" fill="none" stroke="#E1FF00" stroke-width="48"/>
+
+  <!-- Four cardinal hour ticks -->
+  <g stroke="#E1FF00" stroke-width="36" stroke-linecap="round">
+    <line x1="512" y1="180" x2="512" y2="240"/>
+    <line x1="512" y1="784" x2="512" y2="844"/>
+    <line x1="180" y1="512" x2="240" y2="512"/>
+    <line x1="784" y1="512" x2="844" y2="512"/>
+  </g>
+
+  <!-- Hands at classic 10:10 (visually balanced, recognizable as a clock).
+       Hour hand: short, pointing to 10. Minute hand: long, pointing to 2. -->
+  <line x1="512" y1="512" x2="372" y2="372"
+        stroke="#E1FF00" stroke-width="44" stroke-linecap="round"/>
+  <line x1="512" y1="512" x2="700" y2="320"
+        stroke="#E1FF00" stroke-width="36" stroke-linecap="round"/>
+
+  <!-- Center pivot -->
+  <circle cx="512" cy="512" r="28" fill="#E1FF00"/>
+</svg>

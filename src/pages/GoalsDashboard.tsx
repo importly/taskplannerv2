@@ -187,7 +187,7 @@ export default function GoalsDashboard() {
                   progress={goal.progress_percent}
                   totalFocusTimeSeconds={goal.total_focus_seconds}
                   colorIndex={i}
-                  onClick={() => {}}
+                  onClick={() => setSelectedGoalId(goal.id)}
                   isArchived
                 />
               ))}
@@ -217,7 +217,7 @@ export default function GoalsDashboard() {
             <form onSubmit={handleCreateGoal} className="flex flex-col" style={{ gap: "16px" }}>
               <div className="flex flex-col" style={{ gap: "6px" }}>
                 <label
-                  className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em]"
+                  className="text-[10px] font-semibold uppercase tracking-[0.1em]"
                   style={{ color: "#3A3A3C" }}
                 >
                   Title
@@ -239,7 +239,7 @@ export default function GoalsDashboard() {
               </div>
               <div className="flex flex-col" style={{ gap: "6px" }}>
                 <label
-                  className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em]"
+                  className="text-[10px] font-semibold uppercase tracking-[0.1em]"
                   style={{ color: "#3A3A3C" }}
                 >
                   Description (Optional)
@@ -300,7 +300,7 @@ function StripStat({ value, label }: { value: string; label: string }) {
   return (
     <div>
       <div
-        className="font-mono font-bold"
+        className="font-bold"
         style={{ fontSize: 34, letterSpacing: "-0.03em", color: "#fff" }}
       >
         {value}

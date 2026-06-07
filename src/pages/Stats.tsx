@@ -86,7 +86,7 @@ export default function Stats() {
             Focus Heatmap · 26 Weeks
           </div>
           <div className="flex items-center" style={{ gap: 5 }}>
-            <span className="font-mono text-[10px]" style={{ color: "#48484A" }}>Less</span>
+            <span className="text-[10px]" style={{ color: "#48484A" }}>Less</span>
             {(["#111", "rgba(10,132,255,0.2)", "rgba(10,132,255,0.48)", "rgba(10,132,255,0.75)", "#0A84FF"] as const).map((bg, i) => (
               <div
                 key={i}
@@ -97,7 +97,7 @@ export default function Stats() {
                 }}
               />
             ))}
-            <span className="font-mono text-[10px]" style={{ color: "#48484A" }}>More</span>
+            <span className="text-[10px]" style={{ color: "#48484A" }}>More</span>
           </div>
         </div>
 
@@ -121,7 +121,7 @@ function HeroStat({ value, label, primary, small }: { value: string; label: stri
   return (
     <div>
       <div
-        className="font-mono font-bold leading-none"
+        className="font-bold leading-none"
         style={{
           fontSize: small ? 40 : 60,
           letterSpacing: "-0.04em",
@@ -158,7 +158,7 @@ function AttributeBar({ name, xp }: { name: string; xp: number }) {
           {name}
         </span>
         <span
-          className="font-mono text-[11px] font-bold"
+          className="text-[11px] font-bold"
           style={{
             color,
             padding: "2px 10px",
@@ -175,7 +175,7 @@ function AttributeBar({ name, xp }: { name: string; xp: number }) {
           style={{ height: "100%", width: `${progress}%`, background: color, borderRadius: 10, transition: "width 1s ease-out" }}
         />
       </div>
-      <div className="flex justify-between font-mono text-[10px]" style={{ color: "#48484A" }}>
+      <div className="flex justify-between text-[10px]" style={{ color: "#48484A" }}>
         <span>{Math.floor(xp).toLocaleString()} XP earned</span>
       </div>
     </div>
@@ -186,7 +186,7 @@ function StreakStat({ value, label, primary }: { value: string; label: string; p
   return (
     <div>
       <div
-        className="font-mono font-bold"
+        className="font-bold"
         style={{ fontSize: 24, color: primary ? "#fff" : "rgba(255,255,255,0.3)" }}
       >
         {value}
@@ -264,7 +264,7 @@ function RadarChart({ attrMap }: { attrMap: Record<string, number> }) {
           textAnchor="middle"
           dominantBaseline="middle"
           fontSize="9"
-          fontFamily="JetBrains Mono, monospace"
+          fontFamily="var(--font-sans)"
           fontWeight="600"
           fill="#3A3A3C"
           style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}

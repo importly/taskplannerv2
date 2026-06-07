@@ -14,6 +14,7 @@ import {
   useGoalStats,
   useNarrativeLogs,
   useGoalTasks,
+  useUpdateGoal,
   useUpdateGoalProgress,
   useArchiveGoal,
   useDeleteGoal,
@@ -21,7 +22,7 @@ import {
 } from "../db/goalHooks";
 import { useSessionStore } from "../stores/sessionStore";
 import { useTimerStore } from "../stores/timerStore";
-import { Play, Archive, Trash2, ChevronLeft, Send, Calendar, MoreHorizontal } from "lucide-react";
+import { Play, Archive, Trash2, ChevronLeft, Send, Calendar, MoreHorizontal, Pencil } from "lucide-react";
 
 interface GoalDetailProps {
   goalId: string;
@@ -34,6 +35,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
   const { data: logs } = useNarrativeLogs(goalId);
   const { data: tasks } = useGoalTasks(goalId);
 
+  const updateGoal = useUpdateGoal();
   const updateProgress = useUpdateGoalProgress();
   const archiveGoal = useArchiveGoal();
   const deleteGoal = useDeleteGoal();
@@ -45,6 +47,9 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
 
   const [manualLog, setManualLog] = useState("");
   const [showActions, setShowActions] = useState(false);
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   if (goalLoading || !goal) {
     return (
@@ -53,6 +58,27 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
       </div>
     );
   }
+
+  const isArchived = Boolean(goal.archived_at);
+
+  const handleOpenGoalEdit = () => {
+    setEditTitle(goal.title);
+    setEditDescription(goal.description || "");
+    setShowActions(false);
+    setIsEditingGoal(true);
+  };
+
+  const handleSaveGoalEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedTitle = editTitle.trim();
+    if (!trimmedTitle) return;
+    await updateGoal.mutateAsync({
+      id: goal.id,
+      title: trimmedTitle,
+      description: editDescription.trim() || null,
+    });
+    setIsEditingGoal(false);
+  };
 
   const handleStartFocus = () => {
     setSessionGoal(goal.id);
@@ -93,7 +119,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
         height: "calc(100vh - 44px)",
         background: "#000",
         color: "#fff",
-        fontFamily: "Inter, system-ui, sans-serif",
+        fontFamily: "var(--font-sans)",
       }}
     >
       {/* ── Header ── */}
@@ -121,7 +147,6 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
           </button>
           <div>
             <div
-              className="font-mono"
               style={{ fontSize: 10, color: "#48484A", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}
             >
               Goals /
@@ -133,7 +158,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {timerStatus === "IDLE" && (
+          {timerStatus === "IDLE" && !isArchived && (
             <button
               onClick={handleStartFocus}
               style={{
@@ -172,6 +197,18 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
                   }}
                 >
                   <button
+                    onClick={handleOpenGoalEdit}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      width: "100%", padding: "9px 16px",
+                      background: "transparent", border: "none", cursor: "pointer",
+                      fontSize: 13, color: "#8E8E93", textAlign: "left",
+                    }}
+                  >
+                    <Pencil size={14} /> Edit Goal
+                  </button>
+                  {!isArchived && (
+                  <button
                     onClick={handleArchive}
                     style={{
                       display: "flex", alignItems: "center", gap: 10,
@@ -182,6 +219,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
                   >
                     <Archive size={14} /> Archive Goal
                   </button>
+                  )}
                   <button
                     onClick={handleDelete}
                     style={{
@@ -199,6 +237,102 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
           </div>
         </div>
       </div>
+
+      {isEditingGoal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(8px)", padding: 16, animation: "fade-in 150ms ease forwards" }}
+        >
+          <div
+            className="w-full"
+            style={{
+              maxWidth: 460,
+              background: "#111",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 20,
+              padding: 24,
+              animation: "scale-in 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards",
+            }}
+          >
+            <div className="text-[18px] font-bold text-white" style={{ marginBottom: 24 }}>
+              Edit Goal
+            </div>
+            <form onSubmit={handleSaveGoalEdit} className="flex flex-col" style={{ gap: 16 }}>
+              <div className="flex flex-col" style={{ gap: 6 }}>
+                <label
+                  className="text-[10px] font-semibold uppercase tracking-[0.1em]"
+                  style={{ color: "#3A3A3C" }}
+                >
+                  Title
+                </label>
+                <input
+                  autoFocus
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="text-white text-[14px] transition-colors focus:outline-none"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    borderRadius: 10,
+                    padding: "9px 14px",
+                  }}
+                />
+              </div>
+              <div className="flex flex-col" style={{ gap: 6 }}>
+                <label
+                  className="text-[10px] font-semibold uppercase tracking-[0.1em]"
+                  style={{ color: "#3A3A3C" }}
+                >
+                  Description
+                </label>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={4}
+                  className="text-white text-[14px] resize-none transition-colors focus:outline-none"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    borderRadius: 10,
+                    padding: "9px 14px",
+                  }}
+                />
+              </div>
+              <div className="flex justify-end" style={{ gap: 12, marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingGoal(false)}
+                  className="text-[13px] font-medium transition-colors"
+                  style={{
+                    color: "#48484A",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "8px 14px",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!editTitle.trim() || updateGoal.isPending}
+                  className="text-[13px] font-semibold text-black transition-opacity disabled:opacity-40"
+                  style={{
+                    background: "#E1FF00",
+                    borderRadius: 20,
+                    padding: "8px 24px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  {updateGoal.isPending ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── Body: split panes ── */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
@@ -219,7 +353,6 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
             {/* Strategic Narrative */}
             <section>
               <div
-                className="font-mono"
                 style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93", marginBottom: 16 }}
               >
                 Strategic Narrative
@@ -232,7 +365,6 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
             {/* Execution Logs */}
             <section>
               <div
-                className="font-mono"
                 style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93", marginBottom: 16 }}
               >
                 Execution Logs
@@ -255,7 +387,6 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
                       }}
                     />
                     <div
-                      className="font-mono"
                       style={{ fontSize: 10, color: "#48484A", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}
                     >
                       {new Date(log.timestamp).toLocaleDateString()} · {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -330,12 +461,11 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
           <section style={{ marginBottom: 40 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
               <div
-                className="font-mono"
                 style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93" }}
               >
                 Progress
               </div>
-              <span className="font-mono" style={{ fontSize: 24, fontWeight: 700, color: "#E1FF00" }}>
+              <span style={{ fontSize: 24, fontWeight: 700, color: "#E1FF00" }}>
                 {goal.progress_percent}%
               </span>
             </div>
@@ -353,7 +483,6 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
               }}
             />
             <p
-              className="font-mono"
               style={{ fontSize: 10, color: "#3A3A3C", textAlign: "center", marginTop: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}
             >
               Slide to adjust completion
@@ -363,7 +492,6 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
           {/* Execution Velocity chart */}
           <section style={{ marginBottom: 40 }}>
             <div
-              className="font-mono"
               style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93", marginBottom: 16 }}
             >
               Execution Velocity
@@ -377,7 +505,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
                     stroke="#3A3A3C"
                     tickFormatter={(val) => val.split("-").slice(1).join("/")}
                     fontSize={9}
-                    fontFamily="JetBrains Mono, monospace"
+                    fontFamily="var(--font-sans)"
                     tickLine={false}
                     axisLine={false}
                     tick={{ fill: "#48484A" }}
@@ -385,7 +513,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
                   <YAxis
                     stroke="#3A3A3C"
                     fontSize={9}
-                    fontFamily="JetBrains Mono, monospace"
+                    fontFamily="var(--font-sans)"
                     tickLine={false}
                     axisLine={false}
                     unit="m"
@@ -394,7 +522,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
                   <Tooltip
                     contentStyle={{
                       background: "#111", border: "1px solid rgba(255,255,255,0.10)",
-                      borderRadius: 10, fontSize: 11, fontFamily: "JetBrains Mono, monospace",
+                      borderRadius: 10, fontSize: 11, fontFamily: "var(--font-sans), sans-serif",
                       color: "#fff",
                     }}
                     cursor={{ fill: "rgba(255,255,255,0.03)" }}
@@ -404,7 +532,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
               </ResponsiveContainer>
             </div>
             <div
-              className="flex justify-between font-mono"
+              className="flex justify-between"
               style={{ fontSize: 10, color: "#3A3A3C", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 10 }}
             >
               <span>Past 14 Days</span>
@@ -415,7 +543,6 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
           {/* Linked Tasks */}
           <section>
             <div
-              className="font-mono"
               style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8E8E93", marginBottom: 16 }}
             >
               Linked Tasks
@@ -446,7 +573,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
                     </span>
                   </div>
                   {task.due_date && (
-                    <div className="font-mono" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#48484A" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#48484A" }}>
                       <Calendar size={9} />
                       {new Date(task.due_date).toLocaleDateString()}
                     </div>

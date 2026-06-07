@@ -1,6 +1,9 @@
 use tauri::{Manager, Emitter};
 use std::collections::HashMap;
 
+mod phone_view;
+use phone_view::{get_phone_view_url, get_phone_view_urls, push_timer_state, PhoneViewState};
+
 #[tauri::command]
 async fn exchange_ms_token(
     code: String,
@@ -129,6 +132,9 @@ pub fn run() {
             start_drag,
             exchange_ms_token,
             refresh_ms_token,
+            get_phone_view_urls,
+            get_phone_view_url,
+            push_timer_state,
         ])
         .setup(|app| {
             #[cfg(any(windows, target_os = "linux"))]
@@ -136,6 +142,13 @@ pub fn run() {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 app.deep_link().register_all()?;
             }
+
+            // Phone-view HTTP+WS server: serves a read-only fullscreen timer
+            // mirror to other devices on the local network (single-user, no
+            // auth — see src/phone_view.rs).
+            let phone_view_state = PhoneViewState::new();
+            phone_view::start(phone_view_state.clone());
+            app.manage(phone_view_state);
 
             let win = app.get_webview_window("main").unwrap();
             let win_clone = win.clone();

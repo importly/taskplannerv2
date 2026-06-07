@@ -24,13 +24,13 @@ export const GoalStatsPanel = () => {
       </div>
       <div className="flex" style={{ gap: 16, marginBottom: 14 }}>
         <div>
-          <div className="text-sm font-mono text-white/40">Focus</div>
-          <div className="text-lg font-mono text-white" style={{ marginTop: 2 }}>{todayMins}m</div>
+          <div className="text-sm text-white/40">Focus</div>
+          <div className="text-lg text-white" style={{ marginTop: 2 }}>{todayMins}m</div>
         </div>
         <div style={{ width: 1, background: "rgba(255,255,255,0.06)", alignSelf: "stretch" }} />
         <div>
-          <div className="text-sm font-mono text-white/40">Streak</div>
-          <div className={`text-lg font-mono ${streak && streak > 0 ? "text-[#30D158]" : "text-white/60"}`} style={{ marginTop: 2 }}>
+          <div className="text-sm text-white/40">Streak</div>
+          <div className={`text-lg ${streak && streak > 0 ? "text-[#30D158]" : "text-white/60"}`} style={{ marginTop: 2 }}>
             {streak || 0}d
           </div>
         </div>
@@ -86,7 +86,7 @@ export const GoalStatsPanel = () => {
                             style={{ width: `${Math.min(100, Math.max(0, goal.progress_percent))}%`, background: color }}
                           />
                         </div>
-                        <div className="font-mono text-[10px]" style={{ color: "#48484A", marginTop: 3 }}>
+                        <div className="text-[10px]" style={{ color: "#48484A", marginTop: 3 }}>
                           {goal.progress_percent}%
                         </div>
                       </div>

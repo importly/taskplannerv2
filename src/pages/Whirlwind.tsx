@@ -107,7 +107,7 @@ export default function Whirlwind() {
       </div>
 
       {/* Sync status */}
-      <div className="font-mono" style={{ fontSize: 11, color: "#3A3A3C", marginBottom: 24 }}>
+      <div style={{ fontSize: 11, color: "#3A3A3C", marginBottom: 24 }}>
         <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: isSyncing ? "#FF9500" : "#30D158", marginRight: 6, verticalAlign: "middle" }} />
         {isSyncing ? "Syncing..." : "Microsoft To Do · synced"}
       </div>
@@ -138,7 +138,7 @@ export default function Whirlwind() {
                 <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "#48484A", textTransform: "uppercase" }}>
                   {list.displayName}
                 </span>
-                <span className="font-mono" style={{ fontSize: 10, color: "#3A3A3C" }}>{tasks.length}</span>
+                <span style={{ fontSize: 10, color: "#3A3A3C" }}>{tasks.length}</span>
               </div>
 
               {tasks.length === 0 && (
@@ -189,7 +189,7 @@ function TaskRow({ task, goals, onComplete, onLink }: { task: any; goals: any[];
       )
     : null;
   const isOverdue = dueDayDiff !== null && dueDayDiff < 0;
-  const isSoon = dueDayDiff !== null && dueDayDiff >= 0 && dueDayDiff <= 1;
+  const isSoon = dueDayDiff === 0;
 
   return (
     <div
@@ -221,7 +221,7 @@ function TaskRow({ task, goals, onComplete, onLink }: { task: any; goals: any[];
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
           {dueDate && (
-            <span className="font-mono" style={{
+            <span style={{
               fontSize: 10, padding: "2px 7px", borderRadius: 20,
               background: isOverdue ? "rgba(255,59,48,0.12)" : isSoon ? "rgba(255,149,0,0.12)" : "rgba(255,255,255,0.06)",
               color: isOverdue ? "#FF3B30" : isSoon ? "#FF9500" : "#8E8E93",

@@ -1,10 +1,13 @@
 import { create } from "zustand";
+import { invoke } from "@tauri-apps/api/core";
 
 export type TimerStatus = "IDLE" | "ACTIVE" | "PAUSED" | "STOPPED";
+export type TimerMode = "countdown" | "stopwatch";
 
 interface TimerStore {
   // State machine
   status: TimerStatus;
+  timerMode: TimerMode;
 
   // Timing
   startTime: number | null;          // Date.now() when ACTIVE began
@@ -37,10 +40,12 @@ interface TimerStore {
   setPenaltyCountdown: (n: number | null) => void;
   toggleMiniPlayer: () => void;
   setTargetMinutes: (m: number) => void;
+  setTimerMode: (mode: TimerMode) => void;
 }
 
 export const useTimerStore = create<TimerStore>((set, get) => ({
   status: "IDLE",
+  timerMode: "countdown",
   startTime: null,
   pausedAt: null,
   focusElapsedSeconds: 0,
@@ -208,4 +213,69 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   setTargetMinutes: (m: number) => {
     set({ targetMinutes: m });
   },
+
+  setTimerMode: (mode: TimerMode) => {
+    if (get().status !== "IDLE") return;
+    set({ timerMode: mode });
+  },
 }));
+
+// --- Phone view: push timer state + task list to the local HTTP/WS server ---
+// Mirrors the timer to phones on the same Wi-Fi via the Rust-side phone_view
+// server. We push whenever state changes AND on a 1-second tick while ACTIVE
+// (so the phone clock keeps counting down). Pushes are throttled to ~once
+// per 250ms via a trailing-edge timer.
+
+// Tasks are fed in from React via setPhoneTasks (the timer store has no DB
+// access here). Module-local cache so computeSnapshot stays sync.
+let phoneTasks: string[] = [];
+export function setPhoneTasks(t: string[]) {
+  phoneTasks = t.slice(0, 5);
+  pushPhoneSnapshot();
+}
+
+let throttleTimer: ReturnType<typeof setTimeout> | null = null;
+let lastSentAt = 0;
+const MIN_INTERVAL_MS = 250;
+
+const computeSnapshot = () => {
+  const s = useTimerStore.getState();
+  const targetSeconds = s.targetMinutes * 60;
+  let liveFocus = s.focusElapsedSeconds;
+  if (s.status === "ACTIVE" && s.startTime) {
+    liveFocus += (Date.now() - s.startTime) / 1000;
+  }
+  const remainingSeconds = Math.max(0, targetSeconds - liveFocus);
+  return {
+    status: s.status,
+    timerMode: s.timerMode,
+    elapsedSeconds: Math.floor(liveFocus),
+    remainingSeconds: Math.floor(remainingSeconds),
+    targetSeconds,
+    tasks: phoneTasks,
+  };
+};
+
+function pushPhoneSnapshot() {
+  const now = Date.now();
+  const wait = Math.max(0, MIN_INTERVAL_MS - (now - lastSentAt));
+  if (throttleTimer) return;
+  throttleTimer = setTimeout(() => {
+    throttleTimer = null;
+    lastSentAt = Date.now();
+    try {
+      invoke("push_timer_state", { payload: computeSnapshot() }).catch(() => {});
+    } catch {
+      /* not running inside Tauri */
+    }
+  }, wait);
+}
+
+useTimerStore.subscribe(() => pushPhoneSnapshot());
+
+if (typeof window !== "undefined") {
+  setInterval(() => {
+    const status = useTimerStore.getState().status;
+    if (status === "ACTIVE") pushPhoneSnapshot();
+  }, 1000);
+}

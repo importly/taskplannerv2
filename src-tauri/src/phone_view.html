@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Timer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    body {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    /* Two stacked fullscreen layers — air (default) and water (inverted).
+       The water layer's clip-path is driven by requestAnimationFrame. */
+    .layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      text-align: center;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .layer.air {
+      background: #000;
+      color: #E1FF00;
+      z-index: 1;
+    }
+    .layer.water {
+      background: #E1FF00;
+      color: #000;
+      z-index: 2;
+      clip-path: inset(0 100% 0 0);
+      opacity: 1;
+      transition: opacity 220ms ease;
+    }
+    .layer.water.hidden { opacity: 0; }
+
+    /* Digits — JS autofits font-size to viewport (minus margin) on every
+       resize + text change. Starts at a sane default so first paint isn't huge. */
+    .digits {
+      font-size: 100px;
+      font-family: "JetBrains Mono", "Geist", sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .digits.active { animation: pulse 1.6s ease-in-out infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.82; }
+    }
+
+    /* Fullscreen toggle — icon only, top-right. */
+    .fs-btn {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top, 12px));
+      right: max(12px, env(safe-area-inset-right, 12px));
+      z-index: 10;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid rgba(225, 255, 0, 0.55);
+      background: rgba(0, 0, 0, 0.35);
+      color: #E1FF00;
+      opacity: 0.35;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 180ms ease, transform 180ms ease;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .fs-btn:active { transform: scale(0.94); opacity: 0.9; }
+    .fs-btn.hidden { display: none; }
+    .fs-btn svg { width: 18px; height: 18px; display: block; }
+  </style>
+</head>
+<body>
+  <!-- Air layer (default state: black bg, yellow text) -->
+  <div class="layer air" id="air">
+    <div class="digits" id="digits-air">--:--</div>
+  </div>
+
+  <!-- Water layer (inverted: yellow bg, black text). Animated via clip-path. -->
+  <div class="layer water hidden" id="water">
+    <div class="digits" id="digits-water">--:--</div>
+  </div>
+
+  <!-- Fullscreen toggle (icon only — no text) -->
+  <button class="fs-btn" id="fs-btn" aria-label="Fullscreen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9V4h5" />
+      <path d="M20 9V4h-5" />
+      <path d="M4 15v5h5" />
+      <path d="M20 15v5h-5" />
+    </svg>
+  </button>
+
+  <script>
+    (function () {
+      var waterEl = document.getElementById("water");
+      var digitsAir = document.getElementById("digits-air");
+      var digitsWater = document.getElementById("digits-water");
+      var fsBtn = document.getElementById("fs-btn");
+
+      // Swallow taps everywhere except the FS button.
+      document.body.addEventListener("touchend", function (ev) {
+        if (ev.target && ev.target.closest && ev.target.closest("#fs-btn")) return;
+        ev.preventDefault();
+      }, { passive: false });
+
+      // ---- Fullscreen ----
+      function isFullscreen() {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement);
+      }
+      function enterFullscreen() {
+        var el = document.documentElement;
+        try {
+          if (el.requestFullscreen) {
+            var p = el.requestFullscreen();
+            if (p && typeof p.catch === "function") p.catch(function () { iosFallback(); });
+          } else if (el.webkitRequestFullscreen) {
+            el.webkitRequestFullscreen();
+          } else {
+            iosFallback();
+          }
+        } catch (e) {
+          iosFallback();
+        }
+      }
+      function iosFallback() {
+        // iOS Safari has no real fullscreen API for non-video.
+        try {
+          document.body.style.minHeight = "calc(100dvh + 1px)";
+          window.scrollTo(0, 1);
+        } catch (e) {}
+        fsBtn.classList.add("hidden");
+      }
+      fsBtn.addEventListener("click", function () {
+        enterFullscreen();
+        fsBtn.classList.add("hidden");
+      });
+      document.addEventListener("fullscreenchange", function () {
+        if (!isFullscreen()) fsBtn.classList.remove("hidden");
+        else fsBtn.classList.add("hidden");
+      });
+      document.addEventListener("webkitfullscreenchange", function () {
+        if (!isFullscreen()) fsBtn.classList.remove("hidden");
+        else fsBtn.classList.add("hidden");
+      });
+
+      // ---- Timer state ----
+      // remainingSeconds / elapsedSeconds = last values reported by server.
+      // lastUpdateAt = local performance.now() when that snapshot arrived.
+      // Between snapshots, ACTIVE state predicts using local clock so
+      // both the digits and the flood bar tween smoothly at 60fps instead of
+      // jumping on every ~250ms WS push.
+      var current = {
+        status: "IDLE",
+        timerMode: "countdown",
+        remainingSeconds: null,
+        elapsedSeconds: null,
+        targetSeconds: null,
+        connected: false,
+        lastUpdateAt: 0
+      };
+
+      // Smoothed display pct — eased toward target each frame so status
+      // transitions (start/stop/pause) glide instead of snap.
+      var displayPct = 0;
+      var lastFrameAt = 0;
+
+      function formatSeconds(total) {
+        if (typeof total !== "number" || !isFinite(total)) return "--:--";
+        var s = Math.max(0, Math.floor(total));
+        var hrs = Math.floor(s / 3600);
+        var mins = Math.floor((s % 3600) / 60);
+        var secs = s % 60;
+        var pad = function (n) { return n < 10 ? "0" + n : "" + n; };
+        if (hrs > 0) return pad(hrs) + ":" + pad(mins) + ":" + pad(secs);
+        return pad(mins) + ":" + pad(secs);
+      }
+
+      // ---- Autofit digits to viewport (with margin) ----
+      // Margin = 8% of the smaller dimension. Probe at a known font-size,
+      // measure, then scale so the text fills available width AND height.
+      var MARGIN_RATIO = 0.08;
+      var PROBE_PX = 100;
+      function fitDigits() {
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+        var margin = Math.min(vw, vh) * MARGIN_RATIO;
+        var availW = Math.max(50, vw - margin * 2);
+        var availH = Math.max(50, vh - margin * 2);
+        digitsAir.style.fontSize = PROBE_PX + "px";
+        var rect = digitsAir.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        var scale = Math.min(availW / rect.width, availH / rect.height);
+        var size = Math.max(16, Math.floor(PROBE_PX * scale));
+        digitsAir.style.fontSize = size + "px";
+        digitsWater.style.fontSize = size + "px";
+      }
+
+      // Predict current remaining seconds: while ACTIVE + connected, count
+      // down locally from the last server snapshot. Otherwise return the
+      // server value verbatim (PAUSED freezes, IDLE/STOPPED is irrelevant).
+      function predictedRemaining() {
+        if (current.remainingSeconds == null) return null;
+        if (current.status !== "ACTIVE" || !current.connected) {
+          return current.remainingSeconds;
+        }
+        var dt = (performance.now() - current.lastUpdateAt) / 1000;
+        return Math.max(0, current.remainingSeconds - dt);
+      }
+
+      function predictedElapsed() {
+        if (current.elapsedSeconds == null) return null;
+        if (current.status !== "ACTIVE" || !current.connected) {
+          return current.elapsedSeconds;
+        }
+        var dt = (performance.now() - current.lastUpdateAt) / 1000;
+        return Math.max(0, current.elapsedSeconds + dt);
+      }
+
+      function computeTargetPct() {
+        if (!current.connected) return 0;
+        var s = current.status;
+        if (s === "IDLE" || s === "STOPPED") return 0;
+        var t = current.targetSeconds;
+        var measured = current.timerMode === "stopwatch" ? predictedElapsed() : predictedRemaining();
+        if (typeof t !== "number" || typeof measured !== "number" || t <= 0) return 0;
+        var pct = current.timerMode === "stopwatch" ? (measured / t) * 100 : (1 - measured / t) * 100;
+        if (pct < 0) pct = 0;
+        if (pct > 100) pct = 100;
+        return pct;
+      }
+
+      function updateDigits() {
+        var isActive = current.status === "ACTIVE" && current.connected;
+        if (digitsAir.classList.contains("active") !== isActive) {
+          digitsAir.classList.toggle("active", isActive);
+          digitsWater.classList.toggle("active", isActive);
+        }
+        var text;
+        var value = current.timerMode === "stopwatch" ? predictedElapsed() : predictedRemaining();
+        if (typeof value === "number") {
+          text = formatSeconds(value);
+        } else if (typeof current.targetSeconds === "number") {
+          text = current.timerMode === "stopwatch" ? "00:00" : formatSeconds(current.targetSeconds);
+        } else {
+          text = "--:--";
+        }
+        if (digitsAir.textContent !== text) {
+          var prevLen = digitsAir.textContent.length;
+          digitsAir.textContent = text;
+          digitsWater.textContent = text;
+          if (prevLen !== text.length) fitDigits();
+        }
+      }
+
+      window.addEventListener("resize", fitDigits);
+      window.addEventListener("orientationchange", fitDigits);
+      // Refit once webfont loads — measurements differ from system fallback.
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(fitDigits);
+      }
+
+      // ---- Tween loop ----
+      // Each frame: ease displayPct toward computeTargetPct() with a time-based
+      // smoothing factor (frame-rate independent). ACTIVE uses tight tracking
+      // (the target itself tweens via prediction), other states use a softer
+      // ease so start/stop/pause transitions glide.
+      // Tau = time constant (seconds) for the exponential ease — smaller =
+      // snappier, larger = smoother. dt-based so 60Hz and 120Hz both feel right.
+      function tick(now) {
+        if (!lastFrameAt) lastFrameAt = now;
+        var dt = Math.max(0, Math.min(0.1, (now - lastFrameAt) / 1000));
+        lastFrameAt = now;
+
+        var target = computeTargetPct();
+        var tau = current.status === "ACTIVE" ? 0.08 : 0.20;
+        var alpha = 1 - Math.exp(-dt / tau);
+        displayPct += (target - displayPct) * alpha;
+        if (Math.abs(target - displayPct) < 0.02) displayPct = target;
+
+        updateDigits();
+
+        var s = current.status;
+        var showWater = current.connected && (s === "ACTIVE" || s === "PAUSED") && displayPct > 0.01;
+        if (showWater) {
+          waterEl.classList.remove("hidden");
+          var rightInset = (100 - displayPct).toFixed(3);
+          waterEl.style.clipPath = "inset(0 " + rightInset + "% 0 0)";
+          waterEl.style.webkitClipPath = "inset(0 " + rightInset + "% 0 0)";
+        } else {
+          waterEl.classList.add("hidden");
+          if (displayPct < 0.01) {
+            waterEl.style.clipPath = "inset(0 100% 0 0)";
+            waterEl.style.webkitClipPath = "inset(0 100% 0 0)";
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      // ---- WebSocket ----
+      function applyPayload(data) {
+        if (!data || typeof data !== "object") return;
+        var prevStatus = current.status;
+        if (typeof data.status === "string") current.status = data.status;
+        current.timerMode = data.timerMode === "stopwatch" ? "stopwatch" : "countdown";
+        current.remainingSeconds = typeof data.remainingSeconds === "number" ? data.remainingSeconds : null;
+        current.elapsedSeconds = typeof data.elapsedSeconds === "number" ? data.elapsedSeconds : null;
+        current.targetSeconds = typeof data.targetSeconds === "number" ? data.targetSeconds : null;
+        current.connected = true;
+        current.lastUpdateAt = performance.now();
+        // Fresh ACTIVE start (IDLE→ACTIVE) should never tween from a leftover
+        // fill from the previous run — snap displayPct so it starts clean.
+        if (prevStatus !== "ACTIVE" && current.status === "ACTIVE" && (
+            (current.timerMode === "countdown" && current.remainingSeconds === current.targetSeconds) ||
+            (current.timerMode === "stopwatch" && current.elapsedSeconds === 0)
+          )) {
+          displayPct = 0;
+        }
+      }
+
+      function setDisconnected() {
+        current.connected = false;
+      }
+
+      var ws = null;
+      var reconnectTimer = null;
+      var backoff = 1000;
+
+      function connect() {
+        try {
+          ws = new WebSocket("ws://" + window.location.host + "/ws");
+        } catch (e) {
+          scheduleReconnect();
+          return;
+        }
+        ws.onopen = function () { backoff = 1000; };
+        ws.onmessage = function (ev) {
+          try {
+            var data = JSON.parse(ev.data);
+            applyPayload(data);
+          } catch (e) { /* ignore malformed */ }
+        };
+        ws.onclose = function () {
+          setDisconnected();
+          scheduleReconnect();
+        };
+        ws.onerror = function () {
+          try { ws.close(); } catch (e) {}
+        };
+      }
+
+      function scheduleReconnect() {
+        if (reconnectTimer) return;
+        reconnectTimer = setTimeout(function () {
+          reconnectTimer = null;
+          connect();
+        }, backoff);
+      }
+
+      updateDigits();
+      fitDigits();
+      connect();
+    })();
+  </script>
+</body>
+</html>

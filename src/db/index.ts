@@ -6,6 +6,7 @@ import * as migration002 from "./migrations/002_seed_default_tags";
 import * as migration003 from "./migrations/003_goals_archive";
 import * as migration004 from "./migrations/004_tags_add_name";
 import * as migration005 from "./migrations/005_remap_attributes";
+import * as migration006 from "./migrations/006_weekly_scoreboard";
 
 let _db: Kysely<DatabaseSchema> | null = null;
 
@@ -25,6 +26,7 @@ export async function initDb(): Promise<Kysely<DatabaseSchema>> {
         "003_goals_archive": migration003,
         "004_tags_add_name": migration004,
         "005_remap_attributes": migration005,
+        "006_weekly_scoreboard": migration006,
       }),
     },
   });

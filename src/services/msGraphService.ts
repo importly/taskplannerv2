@@ -47,3 +47,14 @@ export async function createTask(listId: string, title: string, dueDate?: string
   };
   return await client.api(`/me/todo/lists/${listId}/tasks`).post(task);
 }
+
+export async function deleteTask(listId: string, taskId: string): Promise<void> {
+  const client = await getAuthenticatedClient();
+  try {
+    await client.api(`/me/todo/lists/${listId}/tasks/${taskId}`).delete();
+  } catch (err: any) {
+    // 404 means the task is already gone on Graph — that's fine for our dedupe path.
+    const status = err?.statusCode ?? err?.status;
+    if (status !== 404) throw err;
+  }
+}
