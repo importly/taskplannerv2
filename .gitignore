@@ -25,6 +25,10 @@ dist-ssr
 
 /docs/
 .env
+.env*
+.claude/
+.codex/
+*.md
 .vscode/
 bun.lockb
 bun.lock
