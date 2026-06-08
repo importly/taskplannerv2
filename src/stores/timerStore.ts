@@ -166,32 +166,21 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   },
 
   tick: () => {
-    /* 
-     * NOTE: Penalize functionality is currently disabled as it is broken.
-     * The logic below is commented out to prevent accidental penalties.
-     */
-    /*
     const { status, penaltyCountdown, setPenalized } = get();
     if (status === "ACTIVE" && penaltyCountdown !== null) {
-      if (penaltyCountdown > 0) {
+      if (penaltyCountdown > 1) {
         set({ penaltyCountdown: penaltyCountdown - 1 });
       } else {
         setPenalized();
       }
     }
-    */
   },
 
   handleBlur: () => {
-    /* 
-     * NOTE: Penalize functionality is currently disabled as it is broken.
-     */
-    /*
-    const { status, penalized } = get();
-    if (status === "ACTIVE" && !penalized) {
+    const { status, penalized, penaltyCountdown } = get();
+    if (status === "ACTIVE" && !penalized && penaltyCountdown === null) {
       set({ penaltyCountdown: 15 });
     }
-    */
   },
 
   handleFocus: () => {

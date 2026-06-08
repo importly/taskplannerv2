@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "task": "bun cli/taskCli.ts",
     "preview": "vite preview",
     "tauri": "tauri"
   },

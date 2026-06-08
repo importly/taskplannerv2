@@ -1,60 +1,29 @@
-import { Client } from "@microsoft/microsoft-graph-client";
 import { acquireMsToken } from "./msalAuth";
 import type { TodoTask, TodoTaskList } from "microsoft-graph";
+import { createMsGraphClient } from "./msGraphClient";
 
-async function getAuthenticatedClient() {
-  const token = await acquireMsToken();
-  if (!token) throw new Error("Not authenticated");
-  
-  return Client.init({
-    authProvider: (done) => {
-      done(null, token);
-    },
-  });
-}
+const graphClient = createMsGraphClient(acquireMsToken);
 
 export async function fetchTodoLists(): Promise<TodoTaskList[]> {
-  const client = await getAuthenticatedClient();
-  const response = await client.api("/me/todo/lists").get();
-  return response.value;
+  return graphClient.fetchTodoLists();
 }
 
 export async function fetchTasksForList(listId: string): Promise<TodoTask[]> {
-  const client = await getAuthenticatedClient();
-  const response = await client.api(`/me/todo/lists/${listId}/tasks`)
-    .filter("status ne 'completed'")
-    .get();
-  return response.value;
+  return graphClient.fetchTasksForList(listId);
 }
 
 export async function completeTask(listId: string, taskId: string): Promise<void> {
-  const client = await getAuthenticatedClient();
-  await client.api(`/me/todo/lists/${listId}/tasks/${taskId}`)
-    .patch({ status: "completed" });
+  await graphClient.completeTask(listId, taskId);
 }
 
 export async function updateTask(listId: string, taskId: string, fields: Partial<TodoTask>): Promise<void> {
-  const client = await getAuthenticatedClient();
-  await client.api(`/me/todo/lists/${listId}/tasks/${taskId}`)
-    .patch(fields);
+  await graphClient.updateTask(listId, taskId, fields);
 }
 
-export async function createTask(listId: string, title: string, dueDate?: string): Promise<TodoTask> {
-  const client = await getAuthenticatedClient();
-  const task: TodoTask = {
-    title,
-    dueDateTime: dueDate ? { dateTime: dueDate, timeZone: "UTC" } : undefined,
-  };
-  return await client.api(`/me/todo/lists/${listId}/tasks`).post(task);
+export async function createTask(listId: string, title: string, dueDate?: string, body?: string): Promise<TodoTask> {
+  return graphClient.createTask(listId, { title, dueDate, body });
 }
 
 export async function deleteTask(listId: string, taskId: string): Promise<void> {
-  const client = await getAuthenticatedClient();
-  try {
-    await client.api(`/me/todo/lists/${listId}/tasks/${taskId}`).delete();
-  } catch (err: any) {
-    // 404 means the task is already gone on Graph — that's fine for our dedupe path.
-    const status = err?.statusCode ?? err?.status;
-    if (status !== 404) throw err;
-  }
+  await graphClient.deleteTask(listId, taskId);
 }

@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import type { FocusEvent, ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { acquireMsToken, startMsAuth, disconnectMs } from "../services/msalAuth";
 import { fetchTodoLists } from "../services/msGraphService";
@@ -7,14 +8,27 @@ import {
   useSyncTasks,
   useCompleteTask,
   useCreateTask,
-  useLinkTaskToGoal
+  useLinkTaskToGoal,
+  useUpdateTask,
+  useDeleteTask,
 } from "../db/taskHooks";
 import { useGoals } from "../db/goalHooks";
 import { GoalPicker } from "../components/whirlwind/GoalPicker";
-import { RefreshCcw, Plus, Target, Loader2 } from "lucide-react";
+import { RefreshCcw, Plus, Target, Loader2, Pencil, Trash2, X, Check } from "lucide-react";
+import type { CachedTask } from "../tasks/taskTypes";
+
+type WhirlwindGoal = {
+  id: string;
+  title: string;
+};
 
 export default function Whirlwind() {
   const [isLinkingTaskId, setIsLinkingTaskId] = useState<string | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const editingTaskIdRef = useRef<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [editingDue, setEditingDue] = useState("");
+  const [taskError, setTaskError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: msToken } = useQuery({
@@ -32,6 +46,8 @@ export default function Whirlwind() {
   const { mutate: complete } = useCompleteTask();
   const { mutate: createTask } = useCreateTask();
   const { mutate: linkToGoal } = useLinkTaskToGoal();
+  const { mutate: updateTask, isPending: isUpdatingTask } = useUpdateTask();
+  const { mutate: deleteTask, isPending: isDeletingTask } = useDeleteTask();
   const { data: goals = [] } = useGoals();
 
   const { data: lists = [], isLoading: isLoadingLists } = useQuery({
@@ -58,6 +74,62 @@ export default function Whirlwind() {
     });
     return groups;
   }, [cachedTasks]);
+
+  const setActiveEditingTaskId = (taskId: string | null) => {
+    editingTaskIdRef.current = taskId;
+    setEditingTaskId(taskId);
+  };
+
+  const startEditingTask = (task: CachedTask) => {
+    setTaskError(null);
+    setActiveEditingTaskId(task.ms_task_id);
+    setEditingTitle(task.title);
+    setEditingDue(toDateInputValue(task.due_date));
+  };
+
+  const cancelEditingTask = () => {
+    setActiveEditingTaskId(null);
+    setEditingTitle("");
+    setEditingDue("");
+  };
+
+  const finishEditingTask = (taskId: string) => {
+    if (editingTaskIdRef.current === taskId) cancelEditingTask();
+  };
+
+  const saveEditingTask = (taskId: string, listId: string) => {
+    const title = editingTitle.trim();
+    if (!title || isUpdatingTask) return;
+
+    setTaskError(null);
+    updateTask(
+      {
+        taskId,
+        listId,
+        fields: {
+          title,
+          dueDateTime: editingDue ? { dateTime: `${editingDue}T00:00:00.000Z`, timeZone: "UTC" } : null,
+        },
+      },
+      {
+        onSuccess: () => finishEditingTask(taskId),
+        onError: (error) => setTaskError(errorMessage(error, "Task update failed")),
+      },
+    );
+  };
+
+  const deleteTaskRow = (taskId: string, listId: string) => {
+    if (isDeletingTask) return;
+
+    setTaskError(null);
+    deleteTask(
+      { taskId, listId },
+      {
+        onSuccess: () => finishEditingTask(taskId),
+        onError: (error) => setTaskError(errorMessage(error, "Task delete failed")),
+      },
+    );
+  };
 
   if (!isAuthenticated) {
     return (
@@ -110,6 +182,11 @@ export default function Whirlwind() {
       <div style={{ fontSize: 11, color: "#3A3A3C", marginBottom: 24 }}>
         <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: isSyncing ? "#FF9500" : "#30D158", marginRight: 6, verticalAlign: "middle" }} />
         {isSyncing ? "Syncing..." : "Microsoft To Do · synced"}
+        {taskError && (
+          <div style={{ color: "#FF3B30", marginTop: 6 }}>
+            {taskError}
+          </div>
+        )}
       </div>
 
       {/* Lists */}
@@ -150,6 +227,17 @@ export default function Whirlwind() {
                   key={task.ms_task_id}
                   task={task}
                   goals={goals}
+                  isEditing={editingTaskId === task.ms_task_id}
+                  editingTitle={editingTitle}
+                  editingDue={editingDue}
+                  onEditingTitleChange={setEditingTitle}
+                  onEditingDueChange={setEditingDue}
+                  isSaving={isUpdatingTask}
+                  isDeleting={isDeletingTask}
+                  onEdit={() => startEditingTask(task)}
+                  onSave={() => saveEditingTask(task.ms_task_id, list.id!)}
+                  onCancelEdit={cancelEditingTask}
+                  onDelete={() => deleteTaskRow(task.ms_task_id, list.id!)}
                   onComplete={() => complete({ taskId: task.ms_task_id, listId: list.id! })}
                   onLink={() => setIsLinkingTaskId(task.ms_task_id)}
                 />
@@ -175,10 +263,51 @@ export default function Whirlwind() {
   );
 }
 
-function TaskRow({ task, goals, onComplete, onLink }: { task: any; goals: any[]; onComplete: () => void; onLink: () => void }) {
+type TaskRowProps = {
+  task: CachedTask;
+  goals: WhirlwindGoal[];
+  isEditing: boolean;
+  editingTitle: string;
+  editingDue: string;
+  onEditingTitleChange: (title: string) => void;
+  onEditingDueChange: (due: string) => void;
+  isSaving: boolean;
+  isDeleting: boolean;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancelEdit: () => void;
+  onDelete: () => void;
+  onComplete: () => void;
+  onLink: () => void;
+};
+
+function TaskRow({
+  task,
+  goals,
+  isEditing,
+  editingTitle,
+  editingDue,
+  onEditingTitleChange,
+  onEditingDueChange,
+  isSaving,
+  isDeleting,
+  onEdit,
+  onSave,
+  onCancelEdit,
+  onDelete,
+  onComplete,
+  onLink,
+}: TaskRowProps) {
   const [hovered, setHovered] = useState(false);
+  const [focusedWithin, setFocusedWithin] = useState(false);
   const linkedGoal = goals.find(g => g.id === task.linked_goal_id);
   const dueDate = task.due_date ? new Date(task.due_date) : null;
+  const canSave = editingTitle.trim().length > 0 && !isSaving;
+  const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setFocusedWithin(false);
+    }
+  };
   // Compare by calendar day. MS Graph stores date-only dues at UTC midnight; comparing
   // wall-clock instants flips a due-today task to overdue partway through the day.
   const dueDayDiff = dueDate
@@ -195,20 +324,23 @@ function TaskRow({ task, goals, onComplete, onLink }: { task: any; goals: any[];
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onFocus={() => setFocusedWithin(true)}
+      onBlur={handleBlur}
       style={{
         display: "flex", alignItems: "flex-start", gap: 12,
         padding: "10px 8px", borderRadius: 10,
-        background: hovered ? "rgba(255,255,255,0.04)" : "transparent",
-        transition: "background 150ms", cursor: "pointer",
+        background: isEditing ? "rgba(255,255,255,0.05)" : hovered ? "rgba(255,255,255,0.04)" : "transparent",
+        transition: "background 150ms",
       }}
     >
       {/* Checkbox */}
       <button
         onClick={onComplete}
+        disabled={isEditing || isSaving || isDeleting}
         style={{
           width: 18, height: 18, borderRadius: "50%", flexShrink: 0, marginTop: 1,
           border: "1.5px solid rgba(255,255,255,0.18)", background: "transparent",
-          cursor: "pointer", transition: "border-color 150ms",
+          cursor: isEditing || isSaving || isDeleting ? "default" : "pointer", transition: "border-color 150ms",
         }}
         onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)")}
         onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)")}
@@ -216,30 +348,68 @@ function TaskRow({ task, goals, onComplete, onLink }: { task: any; goals: any[];
 
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 1.4, fontWeight: 450 }}>
-          {task.title}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-          {dueDate && (
-            <span style={{
-              fontSize: 10, padding: "2px 7px", borderRadius: 20,
-              background: isOverdue ? "rgba(255,59,48,0.12)" : isSoon ? "rgba(255,149,0,0.12)" : "rgba(255,255,255,0.06)",
-              color: isOverdue ? "#FF3B30" : isSoon ? "#FF9500" : "#8E8E93",
-              border: `1px solid ${isOverdue ? "rgba(255,59,48,0.2)" : isSoon ? "rgba(255,149,0,0.2)" : "rgba(255,255,255,0.08)"}`,
-            }}>
-              {dueDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-            </span>
-          )}
-          {linkedGoal && (
-            <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 20, background: "rgba(10,132,255,0.1)", color: "#0A84FF", border: "1px solid rgba(10,132,255,0.2)" }}>
-              {linkedGoal.title}
-            </span>
-          )}
-        </div>
+        {isEditing ? (
+          <>
+            <input
+              type="text"
+              value={editingTitle}
+              onChange={e => onEditingTitleChange(e.target.value)}
+              style={{ background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.15)", outline: "none", color: "#fff", fontSize: 13, lineHeight: 1.4, width: "100%", paddingBottom: 2, marginBottom: 6, fontFamily: "inherit" }}
+            />
+            <input
+              type="date"
+              value={editingDue}
+              onChange={e => onEditingDueChange(e.target.value)}
+              style={{ background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.1)", outline: "none", color: "#8E8E93", fontSize: 11, paddingBottom: 2, fontFamily: "inherit" }}
+            />
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 1.4, fontWeight: 450, overflowWrap: "anywhere", wordBreak: "break-word" }}>
+              {task.title}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap", minWidth: 0 }}>
+              {dueDate && (
+                <span style={{
+                  fontSize: 10, padding: "2px 7px", borderRadius: 20,
+                  background: isOverdue ? "rgba(255,59,48,0.12)" : isSoon ? "rgba(255,149,0,0.12)" : "rgba(255,255,255,0.06)",
+                  color: isOverdue ? "#FF3B30" : isSoon ? "#FF9500" : "#8E8E93",
+                  border: `1px solid ${isOverdue ? "rgba(255,59,48,0.2)" : isSoon ? "rgba(255,149,0,0.2)" : "rgba(255,255,255,0.08)"}`,
+                }}>
+                  {dueDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </span>
+              )}
+              {linkedGoal && (
+                <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 20, background: "rgba(10,132,255,0.1)", color: "#0A84FF", border: "1px solid rgba(10,132,255,0.2)", maxWidth: "100%", overflowWrap: "anywhere", wordBreak: "break-word" }}>
+                  {linkedGoal.title}
+                </span>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Actions */}
-      <div style={{ display: "flex", gap: 4, opacity: hovered ? 1 : 0, transition: "opacity 150ms", flexShrink: 0 }}>
+      <div style={{ display: "flex", gap: 4, opacity: hovered || focusedWithin || isEditing ? 1 : 0, transition: "opacity 150ms", flexShrink: 0 }}>
+        {isEditing ? (
+          <>
+            <IconButton onClick={onSave} title="Save task" disabled={!canSave}>
+              <Check size={12} />
+            </IconButton>
+            <IconButton onClick={onCancelEdit} title="Cancel edit" disabled={isSaving}>
+              <X size={12} />
+            </IconButton>
+          </>
+        ) : (
+          <>
+            <IconButton onClick={onEdit} title="Edit task">
+              <Pencil size={12} />
+            </IconButton>
+            <IconButton onClick={onDelete} title="Delete task" disabled={isDeleting}>
+              <Trash2 size={12} />
+            </IconButton>
+          </>
+        )}
         <button
           onClick={onLink}
           title="Link to goal"
@@ -252,6 +422,39 @@ function TaskRow({ task, goals, onComplete, onLink }: { task: any; goals: any[];
       </div>
     </div>
   );
+}
+
+function IconButton({ children, disabled, onClick, title }: { children: ReactNode; disabled?: boolean; onClick: () => void; title: string }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      disabled={disabled}
+      style={{ width: 26, height: 26, borderRadius: 7, border: "none", cursor: disabled ? "default" : "pointer", background: "rgba(255,255,255,0.06)", color: disabled ? "#3A3A3C" : "#8E8E93", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 150ms, color 150ms" }}
+      onMouseEnter={e => {
+        if (disabled) return;
+        e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+        e.currentTarget.style.color = "#fff";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+        e.currentTarget.style.color = disabled ? "#3A3A3C" : "#8E8E93";
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function toDateInputValue(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+}
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 function InlineAdd({ onAdd }: { onAdd: (title: string) => void }) {

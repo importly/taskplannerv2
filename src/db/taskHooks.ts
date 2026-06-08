@@ -1,8 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getDb } from "./index";
-import { syncAllTasks } from "../services/syncEngine";
-import { completeTask, updateTask, createTask } from "../services/msGraphService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { TodoTask } from "microsoft-graph";
+import { createMsGraphClient } from "../services/msGraphClient";
+import { acquireMsToken } from "../services/msalAuth";
+import { createTaskOperations, type TaskOperations } from "../tasks/taskOperations";
+import type { CachedTask } from "../tasks/taskTypes";
+import { createTauriTaskRepository } from "./tauriTaskRepository";
 
 export const taskKeys = {
   all: ["tasks"] as const,
@@ -10,26 +12,53 @@ export const taskKeys = {
   cached: () => [...taskKeys.all, "cached"] as const,
 };
 
+function getTaskOperations(): TaskOperations {
+  return createTaskOperations({
+    repository: createTauriTaskRepository(),
+    graphClient: createMsGraphClient(acquireMsToken),
+  });
+}
+
+async function resolveTaskForMutation(
+  operations: TaskOperations,
+  taskId: string,
+  fallbackListId?: string,
+): Promise<{ taskId: string; listId: string }> {
+  const normalizedRef = taskId.trim();
+  const cachedTasks = await operations.listCachedTasks();
+  const exactMatch = cachedTasks.find((task) => task.ms_task_id === normalizedRef);
+  const matchingTask =
+    exactMatch ??
+    cachedTasks.find(
+      (task) => task.ms_task_id.startsWith(normalizedRef) || task.title.trim().toLowerCase() === normalizedRef.toLowerCase(),
+    );
+
+  const resolvedTaskId = matchingTask?.ms_task_id ?? normalizedRef;
+  const resolvedListId = matchingTask?.list_id ?? fallbackListId;
+  if (!resolvedListId) {
+    throw new Error(`Task ${taskId} does not have a Microsoft To Do list id`);
+  }
+
+  return { taskId: resolvedTaskId, listId: resolvedListId };
+}
+
+function invalidateCachedTasks(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: taskKeys.cached() });
+}
+
 export function useCachedTasks() {
   return useQuery({
     queryKey: taskKeys.cached(),
-    queryFn: async () => {
-      const db = getDb();
-      return await db
-        .selectFrom("cached_tasks")
-        .selectAll()
-        .orderBy("due_date", "asc")
-        .execute();
-    },
+    queryFn: () => getTaskOperations().listCachedTasks(),
   });
 }
 
 export function useSyncTasks() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: syncAllTasks,
+    mutationFn: () => getTaskOperations().syncTasks(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.cached() });
+      invalidateCachedTasks(queryClient);
     },
   });
 }
@@ -37,31 +66,12 @@ export function useSyncTasks() {
 export function useCompleteTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ taskId, listId }: { taskId: string; listId: string }) => {
-      await completeTask(listId, taskId);
-      const db = getDb();
-      await db
-        .deleteFrom("cached_tasks")
-        .where("ms_task_id", "=", taskId)
-        .execute();
+    mutationFn: async ({ taskId, listId }: { taskId: string; listId?: string }) => {
+      const operations = getTaskOperations();
+      await operations.completeTask(await resolveTaskForMutation(operations, taskId, listId));
     },
-    onMutate: async ({ taskId }) => {
-      await queryClient.cancelQueries({ queryKey: taskKeys.cached() });
-      const previousTasks = queryClient.getQueryData(taskKeys.cached());
-
-      queryClient.setQueryData(taskKeys.cached(), (old: any[] | undefined) => {
-        return old?.filter((t) => t.ms_task_id !== taskId);
-      });
-
-      return { previousTasks };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(taskKeys.cached(), context.previousTasks);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.cached() });
+    onSuccess: () => {
+      invalidateCachedTasks(queryClient);
     },
   });
 }
@@ -69,58 +79,21 @@ export function useCompleteTask() {
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ 
-      taskId, 
-      listId, 
-      fields 
-    }: { 
-      taskId: string; 
-      listId: string; 
-      fields: Partial<TodoTask> 
+    mutationFn: async ({
+      taskId,
+      listId,
+      fields,
+    }: {
+      taskId: string;
+      listId?: string;
+      fields: Partial<TodoTask>;
     }) => {
-      await updateTask(listId, taskId, fields);
-      
-      const db = getDb();
-      const updateData: any = {};
-      if (fields.title) updateData.title = fields.title;
-      if (fields.dueDateTime) updateData.due_date = fields.dueDateTime.dateTime;
-      if (fields.status) updateData.status = fields.status;
-      
-      if (Object.keys(updateData).length > 0) {
-        await db
-          .updateTable("cached_tasks")
-          .set(updateData)
-          .where("ms_task_id", "=", taskId)
-          .execute();
-      }
+      const operations = getTaskOperations();
+      const taskRef = await resolveTaskForMutation(operations, taskId, listId);
+      await operations.updateTask({ ...taskRef, fields });
     },
-    onMutate: async ({ taskId, fields }) => {
-      await queryClient.cancelQueries({ queryKey: taskKeys.cached() });
-      const previousTasks = queryClient.getQueryData(taskKeys.cached());
-
-      queryClient.setQueryData(taskKeys.cached(), (old: any[] | undefined) => {
-        return old?.map((t) => {
-          if (t.ms_task_id === taskId) {
-            return {
-              ...t,
-              title: fields.title ?? t.title,
-              due_date: fields.dueDateTime?.dateTime ?? t.due_date,
-              status: fields.status ?? t.status,
-            };
-          }
-          return t;
-        });
-      });
-
-      return { previousTasks };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(taskKeys.cached(), context.previousTasks);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.cached() });
+    onSuccess: () => {
+      invalidateCachedTasks(queryClient);
     },
   });
 }
@@ -128,27 +101,28 @@ export function useUpdateTask() {
 export function useCreateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ listId, title }: { listId: string; title: string }) => {
-      const newTask = await createTask(listId, title);
-      
-      const db = getDb();
-      await db
-        .insertInto("cached_tasks")
-        .values({
-          ms_task_id: newTask.id!,
-          title: newTask.title!,
-          body: newTask.body?.content || null,
-          status: newTask.status || "notStarted",
-          due_date: newTask.dueDateTime?.dateTime || null,
-          list_id: listId,
-          linked_goal_id: null,
-        })
-        .execute();
-        
-      return newTask;
+    mutationFn: ({ listId, title, dueDate, body, linkedGoalId }: {
+      listId: string;
+      title: string;
+      dueDate?: string;
+      body?: string;
+      linkedGoalId?: string | null;
+    }) => getTaskOperations().createTask({ listId, title, dueDate, body, linkedGoalId }),
+    onSuccess: () => {
+      invalidateCachedTasks(queryClient);
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ taskId, listId }: { taskId: string; listId?: string }) => {
+      const operations = getTaskOperations();
+      await operations.deleteTask(await resolveTaskForMutation(operations, taskId, listId));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.cached() });
+      invalidateCachedTasks(queryClient);
     },
   });
 }
@@ -157,15 +131,33 @@ export function useLinkTaskToGoal() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ taskId, goalId }: { taskId: string; goalId: string | null }) => {
-      const db = getDb();
-      await db
-        .updateTable("cached_tasks")
-        .set({ linked_goal_id: goalId })
-        .where("ms_task_id", "=", taskId)
-        .execute();
+      const operations = getTaskOperations();
+      const cachedTask = await resolveCachedTask(operations, taskId);
+      if (goalId) {
+        await operations.linkTaskToGoal({ taskId: cachedTask.ms_task_id, goalId });
+      } else {
+        await operations.unlinkTaskFromGoal({ taskId: cachedTask.ms_task_id });
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.cached() });
+      invalidateCachedTasks(queryClient);
     },
   });
+}
+
+async function resolveCachedTask(operations: TaskOperations, taskId: string): Promise<CachedTask> {
+  const normalizedRef = taskId.trim();
+  const cachedTasks = await operations.listCachedTasks();
+  const exactMatch = cachedTasks.find((task) => task.ms_task_id === normalizedRef);
+  const matchingTask =
+    exactMatch ??
+    cachedTasks.find(
+      (task) => task.ms_task_id.startsWith(normalizedRef) || task.title.trim().toLowerCase() === normalizedRef.toLowerCase(),
+    );
+
+  if (!matchingTask) {
+    throw new Error(`Task ${taskId} was not found in the local cache`);
+  }
+
+  return matchingTask;
 }

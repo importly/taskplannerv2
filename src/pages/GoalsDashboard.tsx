@@ -9,13 +9,17 @@ import { useStreak } from "../db/gamificationHooks";
 import { GoalCard } from "../components/goals/GoalCard";
 import { GoalDetail } from "./GoalDetail";
 
+interface GoalsDashboardProps {
+  onStartFocus: () => void;
+}
+
 function formatWeeklyFocus(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   return `${h}:${m.toString().padStart(2, "0")}`;
 }
 
-export default function GoalsDashboard() {
+export default function GoalsDashboard({ onStartFocus }: GoalsDashboardProps) {
   const { data: activeGoals, isLoading: activeLoading } = useGoalsWithStats();
   const { data: archivedGoals } = useArchivedGoalsWithStats();
   const { data: globalStats } = useGlobalStats();
@@ -41,7 +45,7 @@ export default function GoalsDashboard() {
   };
 
   if (selectedGoalId) {
-    return <GoalDetail goalId={selectedGoalId} onBack={() => setSelectedGoalId(null)} />;
+    return <GoalDetail goalId={selectedGoalId} onBack={() => setSelectedGoalId(null)} onStartFocus={onStartFocus} />;
   }
 
   const weeklyFocus = formatWeeklyFocus(globalStats?.focus_seconds_this_week || 0);

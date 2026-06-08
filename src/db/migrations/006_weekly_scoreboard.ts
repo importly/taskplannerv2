@@ -56,10 +56,18 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     UNIQUE(week_start)
   )`.execute(db);
 
-  await sql`ALTER TABLE focus_sessions ADD COLUMN linked_project_id TEXT REFERENCES projects(id) ON DELETE SET NULL`.execute(db);
-  await sql`ALTER TABLE focus_sessions ADD COLUMN evidence_type TEXT CHECK (evidence_type IN ('commit', 'note', 'solved_problem', 'experiment_result', 'email_sent', 'application_submitted', 'no_artifact'))`.execute(db);
-  await sql`ALTER TABLE focus_sessions ADD COLUMN evidence_url TEXT`.execute(db);
-  await sql`ALTER TABLE focus_sessions ADD COLUMN evidence_note TEXT`.execute(db);
+  await addColumnIfMissing(db, "focus_sessions", "linked_project_id", () =>
+    sql`ALTER TABLE focus_sessions ADD COLUMN linked_project_id TEXT REFERENCES projects(id) ON DELETE SET NULL`.execute(db),
+  );
+  await addColumnIfMissing(db, "focus_sessions", "evidence_type", () =>
+    sql`ALTER TABLE focus_sessions ADD COLUMN evidence_type TEXT CHECK (evidence_type IN ('commit', 'note', 'solved_problem', 'experiment_result', 'email_sent', 'application_submitted', 'no_artifact'))`.execute(db),
+  );
+  await addColumnIfMissing(db, "focus_sessions", "evidence_url", () =>
+    sql`ALTER TABLE focus_sessions ADD COLUMN evidence_url TEXT`.execute(db),
+  );
+  await addColumnIfMissing(db, "focus_sessions", "evidence_note", () =>
+    sql`ALTER TABLE focus_sessions ADD COLUMN evidence_note TEXT`.execute(db),
+  );
 
   await sql`CREATE INDEX IF NOT EXISTS idx_focus_sessions_project ON focus_sessions(linked_project_id)`.execute(db);
   await sql`CREATE INDEX IF NOT EXISTS idx_focus_sessions_start_time ON focus_sessions(start_time)`.execute(db);
@@ -74,4 +82,15 @@ export async function down(db: Kysely<unknown>): Promise<void> {
   await sql`DROP TABLE IF EXISTS daily_plans`.execute(db);
   await sql`DROP TABLE IF EXISTS projects`.execute(db);
   // SQLite column drops are intentionally omitted for focus_sessions.
+}
+
+async function addColumnIfMissing(
+  db: Kysely<unknown>,
+  _tableName: "focus_sessions",
+  columnName: string,
+  alter: () => Promise<unknown>,
+): Promise<void> {
+  const result = await sql<{ name: string }>`PRAGMA table_info(focus_sessions)`.execute(db);
+  const hasColumn = result.rows.some((row) => row.name === columnName);
+  if (!hasColumn) await alter();
 }

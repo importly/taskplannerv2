@@ -178,7 +178,7 @@ function AppShell() {
         <div key={page} style={{ height: "100%", animation: "page-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards" }}>
           <Suspense fallback={<div style={{ height: "100%", background: "#000" }} />}>
             {page === "command-center" && <CommandCenter />}
-            {page === "goals" && <GoalsDashboard />}
+            {page === "goals" && <GoalsDashboard onStartFocus={() => setPage("command-center")} />}
             {page === "whirlwind" && <Whirlwind />}
             {page === "stats" && <Stats />}
           </Suspense>

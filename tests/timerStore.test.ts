@@ -37,3 +37,39 @@ describe("timer mode", () => {
     expect(state.timerMode).toBe("stopwatch");
   });
 });
+
+describe("timer enforcer penalty", () => {
+  beforeEach(() => {
+    resetTimerStore();
+  });
+
+  test("starts and clears a blur grace countdown during active focus", () => {
+    useTimerStore.getState().handleBlur();
+    expect(useTimerStore.getState().penaltyCountdown).toBeNull();
+
+    useTimerStore.getState().start();
+    useTimerStore.getState().handleBlur();
+    expect(useTimerStore.getState().penaltyCountdown).toBe(15);
+
+    useTimerStore.getState().handleFocus();
+    expect(useTimerStore.getState().penaltyCountdown).toBeNull();
+    expect(useTimerStore.getState().penalized).toBe(false);
+  });
+
+  test("marks the active session penalized when the blur countdown expires", () => {
+    useTimerStore.getState().start();
+    useTimerStore.getState().handleBlur();
+
+    for (let i = 0; i < 14; i += 1) {
+      useTimerStore.getState().tick();
+    }
+
+    expect(useTimerStore.getState().penaltyCountdown).toBe(1);
+    expect(useTimerStore.getState().penalized).toBe(false);
+
+    useTimerStore.getState().tick();
+
+    expect(useTimerStore.getState().penaltyCountdown).toBeNull();
+    expect(useTimerStore.getState().penalized).toBe(true);
+  });
+});

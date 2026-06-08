@@ -27,9 +27,10 @@ import { Play, Archive, Trash2, ChevronLeft, Send, Calendar, MoreHorizontal, Pen
 interface GoalDetailProps {
   goalId: string;
   onBack: () => void;
+  onStartFocus: () => void;
 }
 
-export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
+export function GoalDetail({ goalId, onBack, onStartFocus }: GoalDetailProps) {
   const { data: goal, isLoading: goalLoading } = useGoal(goalId);
   const { data: stats } = useGoalStats(goalId);
   const { data: logs } = useNarrativeLogs(goalId);
@@ -83,7 +84,7 @@ export function GoalDetail({ goalId, onBack }: GoalDetailProps) {
   const handleStartFocus = () => {
     setSessionGoal(goal.id);
     startTimer();
-    onBack(); // Return so user can navigate to Command Center to see the timer
+    onStartFocus();
   };
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
