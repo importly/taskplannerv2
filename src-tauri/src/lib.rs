@@ -150,17 +150,6 @@ pub fn run() {
             phone_view::start(phone_view_state.clone());
             app.manage(phone_view_state);
 
-            let win = app.get_webview_window("main").unwrap();
-            let win_clone = win.clone();
-            win.on_window_event(move |event| {
-                if let tauri::WindowEvent::Focused(focused) = event {
-                    if *focused {
-                        win_clone.emit("window-focus", ()).ok();
-                    } else {
-                        win_clone.emit("window-blur", ()).ok();
-                    }
-                }
-            });
             Ok(())
         })
         .run(tauri::generate_context!())

@@ -8,7 +8,7 @@ import { RollingDigits } from "../components/timer/RollingDigits";
 import { Clock, TimerReset } from "lucide-react";
 
 export default function CommandCenter() {
-  const { status, timerMode, startTime, focusElapsedSeconds, start, pause, resume, stop, penalized, targetMinutes, setTargetMinutes, setTimerMode } = useTimerStore();
+  const { status, timerMode, startTime, focusElapsedSeconds, start, pause, resume, stop, targetMinutes, setTargetMinutes, setTimerMode } = useTimerStore();
   const openManualSession = useSessionStore((state) => state.openManualSession);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [displayTime, setDisplayTime] = useState(() => {
@@ -66,13 +66,12 @@ export default function CommandCenter() {
 
   // Derive target configuration
   const getConfig = useCallback(() => {
-    if (penalized) return { bg: "#FF3B30" };
     switch (status) {
       case "ACTIVE": return { bg: "#E1FF00" };
       case "PAUSED": return { bg: "#1C1C1E" };
       default: return { bg: "transparent" };
     }
-  }, [status, penalized]);
+  }, [status]);
 
   // rAF loop — drives flood bar at 60fps, updates digit state ~1/sec
   useEffect(() => {
@@ -124,7 +123,7 @@ export default function CommandCenter() {
     return () => {
       if (reqRef.current !== undefined) cancelAnimationFrame(reqRef.current);
     };
-  }, [status, timerMode, startTime, focusElapsedSeconds, penalized, targetMinutes, getConfig, formatElapsedTime, formatCountdownTime, formatIdleCountdown]);
+  }, [status, timerMode, startTime, focusElapsedSeconds, targetMinutes, getConfig, formatElapsedTime, formatCountdownTime, formatIdleCountdown]);
 
   // Scroll-to-select handler (IDLE only)
   const scrollAccum = useRef(0);
@@ -166,13 +165,7 @@ export default function CommandCenter() {
   let botBg = "transparent";
   let topBorder = "rgba(255,255,255,0.06)";
 
-  if (penalized) {
-    airDigColor = "#FF3B30";
-    waterDigColor = "rgba(255,255,255,1)";
-    waterBtnClass = "bg-black/15 text-white border-white/15";
-    botBg = "rgba(255,59,48,0.06)";
-    topBorder = "#FF3B30";
-  } else if (status === "ACTIVE") {
+  if (status === "ACTIVE") {
     airDigColor = "rgba(255,255,255,1)";
     waterDigColor = "rgba(0,0,0,1)";
     waterBtnClass = "bg-black/10 text-black/65 border-black/15";

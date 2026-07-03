@@ -52,7 +52,6 @@ export const ReflectionModal = () => {
         await saveFocusSession({
           focusDurationSeconds: manualDurationMinutes * 60,
           breakDurationSeconds: 0,
-          penalized: false,
           endTimestamp: Date.now(),
         });
       } else {

@@ -5,7 +5,6 @@ import { useSessionStore } from "../stores/sessionStore";
 interface SaveFocusSessionOptions {
   focusDurationSeconds?: number;
   breakDurationSeconds?: number;
-  penalized?: boolean;
   endTimestamp?: number;
 }
 
@@ -19,7 +18,6 @@ export async function saveFocusSession(options: SaveFocusSessionOptions = {}) {
   const session = useSessionStore.getState();
   const focusDurationSeconds = options.focusDurationSeconds ?? timer.focusElapsedSeconds;
   const breakDurationSeconds = options.breakDurationSeconds ?? timer.breakElapsedSeconds;
-  const penalized = options.penalized ?? timer.penalized;
 
   // Use the captured stoppedAt time as the authoritative end of the session.
   // This prevents drift if the user stays in the ReflectionModal for minutes.
@@ -41,7 +39,6 @@ export async function saveFocusSession(options: SaveFocusSessionOptions = {}) {
       end_time: endTimeStr,
       focus_duration_seconds: Math.floor(focusDurationSeconds),
       break_duration_seconds: Math.floor(breakDurationSeconds),
-      penalized: penalized ? 1 : 0,
       linked_goal_id: session.linkedGoalId,
     })
     .execute();
@@ -70,7 +67,7 @@ export async function saveFocusSession(options: SaveFocusSessionOptions = {}) {
       .execute();
   }
 
-  if (!penalized && session.selectedTagIds.length > 0) {
+  if (session.selectedTagIds.length > 0) {
     const focusMinutes = Math.floor(focusDurationSeconds / 60);
     const totalXp = focusMinutes * 10;
 

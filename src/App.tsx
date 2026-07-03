@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { initDb } from "./db";
-import { useEnforcer } from "./hooks/useEnforcer";
 import { ReflectionModal } from "./components/timer/ReflectionModal";
 import { SettingsModal } from "./components/settings/SettingsModal";
 import { Settings, Minus, Square, X } from "lucide-react";
@@ -25,7 +24,6 @@ const queryClient = new QueryClient({
 type Page = "command-center" | "goals" | "whirlwind" | "stats";
 
 function AppShell() {
-  useEnforcer();
   const [page, setPage] = useState<Page>("command-center");
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);

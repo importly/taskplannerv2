@@ -30,7 +30,6 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     end_time               TIMESTAMP NOT NULL,
     focus_duration_seconds INTEGER NOT NULL,
     break_duration_seconds INTEGER NOT NULL DEFAULT 0,
-    penalized              INTEGER NOT NULL DEFAULT 0,
     linked_goal_id         TEXT REFERENCES goals(id) ON DELETE SET NULL
   )`.execute(db);
 

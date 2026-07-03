@@ -9,8 +9,6 @@ function resetTimerStore() {
     pausedAt: null,
     focusElapsedSeconds: 0,
     breakElapsedSeconds: 0,
-    penalized: false,
-    penaltyCountdown: null,
     isMiniPlayer: false,
     targetMinutes: 25,
     stoppedAt: null,
@@ -38,38 +36,44 @@ describe("timer mode", () => {
   });
 });
 
-describe("timer enforcer penalty", () => {
+describe("removed timer penalty system", () => {
   beforeEach(() => {
     resetTimerStore();
   });
 
-  test("starts and clears a blur grace countdown during active focus", () => {
-    useTimerStore.getState().handleBlur();
-    expect(useTimerStore.getState().penaltyCountdown).toBeNull();
+  test("does not expose penalty runtime state or enforcer actions", () => {
+    const state = useTimerStore.getState() as unknown as Record<string, unknown>;
 
-    useTimerStore.getState().start();
-    useTimerStore.getState().handleBlur();
-    expect(useTimerStore.getState().penaltyCountdown).toBe(15);
-
-    useTimerStore.getState().handleFocus();
-    expect(useTimerStore.getState().penaltyCountdown).toBeNull();
-    expect(useTimerStore.getState().penalized).toBe(false);
+    for (const removedKey of [
+      "penalized",
+      "penaltyCountdown",
+      "tick",
+      "handleBlur",
+      "handleFocus",
+      "setPenalized",
+      "setPenaltyCountdown",
+    ]) {
+      expect(Object.prototype.hasOwnProperty.call(state, removedKey), removedKey).toBe(false);
+    }
   });
 
-  test("marks the active session penalized when the blur countdown expires", () => {
-    useTimerStore.getState().start();
-    useTimerStore.getState().handleBlur();
+  test("does not keep penalty wiring in the app shell, timer UI, or session save path", async () => {
+    const appSource = await Bun.file("src/App.tsx").text();
+    const commandCenterSource = await Bun.file("src/pages/CommandCenter.tsx").text();
+    const operationsSource = await Bun.file("src/db/operations.ts").text();
 
-    for (let i = 0; i < 14; i += 1) {
-      useTimerStore.getState().tick();
+    for (const removedTerm of [
+      "useEnforcer",
+      "penalized",
+      "penaltyCountdown",
+      "handleBlur",
+      "handleFocus",
+      "setPenalized",
+      "setPenaltyCountdown",
+    ]) {
+      expect(appSource, removedTerm).not.toContain(removedTerm);
+      expect(commandCenterSource, removedTerm).not.toContain(removedTerm);
+      expect(operationsSource, removedTerm).not.toContain(removedTerm);
     }
-
-    expect(useTimerStore.getState().penaltyCountdown).toBe(1);
-    expect(useTimerStore.getState().penalized).toBe(false);
-
-    useTimerStore.getState().tick();
-
-    expect(useTimerStore.getState().penaltyCountdown).toBeNull();
-    expect(useTimerStore.getState().penalized).toBe(true);
   });
 });

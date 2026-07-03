@@ -15,10 +15,6 @@ interface TimerStore {
   focusElapsedSeconds: number;       // accumulated focus seconds (not counting current active run)
   breakElapsedSeconds: number;       // accumulated break seconds
 
-  // Enforcer
-  penalized: boolean;
-  penaltyCountdown: number | null;   // 15 -> 0, null when not active
-
   // Window
   isMiniPlayer: boolean;
 
@@ -33,11 +29,6 @@ interface TimerStore {
   stop: () => void;
   discard: () => void;
   commit: () => void;                // resets store (DB write handled before calling this in the UI/Service layer)
-  tick: () => void;                  // Helper for penalty countdown
-  handleBlur: () => void;
-  handleFocus: () => void;
-  setPenalized: () => void;
-  setPenaltyCountdown: (n: number | null) => void;
   toggleMiniPlayer: () => void;
   setTargetMinutes: (m: number) => void;
   setTimerMode: (mode: TimerMode) => void;
@@ -50,8 +41,6 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   pausedAt: null,
   focusElapsedSeconds: 0,
   breakElapsedSeconds: 0,
-  penalized: false,
-  penaltyCountdown: null,
   isMiniPlayer: false,
   targetMinutes: 25,
   stoppedAt: null,
@@ -61,8 +50,6 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
     set({
       status: "ACTIVE",
       startTime: Date.now(),
-      penalized: false,
-      penaltyCountdown: null,
       focusElapsedSeconds: 0,
       breakElapsedSeconds: 0,
       stoppedAt: null,
@@ -120,8 +107,6 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
         pausedAt: null,
         focusElapsedSeconds: 0,
         breakElapsedSeconds: 0,
-        penalized: false,
-        penaltyCountdown: null,
       });
       // Note: UI should handle showing the "Session too short" toast
       return;
@@ -133,7 +118,6 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       breakElapsedSeconds: finalBreakSeconds,
       startTime: null,
       pausedAt: null,
-      penaltyCountdown: null,
       stoppedAt: now,
     });
   },
@@ -145,8 +129,6 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       pausedAt: null,
       focusElapsedSeconds: 0,
       breakElapsedSeconds: 0,
-      penalized: false,
-      penaltyCountdown: null,
       stoppedAt: null,
     });
   },
@@ -159,40 +141,8 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       pausedAt: null,
       focusElapsedSeconds: 0,
       breakElapsedSeconds: 0,
-      penalized: false,
-      penaltyCountdown: null,
       stoppedAt: null,
     });
-  },
-
-  tick: () => {
-    const { status, penaltyCountdown, setPenalized } = get();
-    if (status === "ACTIVE" && penaltyCountdown !== null) {
-      if (penaltyCountdown > 1) {
-        set({ penaltyCountdown: penaltyCountdown - 1 });
-      } else {
-        setPenalized();
-      }
-    }
-  },
-
-  handleBlur: () => {
-    const { status, penalized, penaltyCountdown } = get();
-    if (status === "ACTIVE" && !penalized && penaltyCountdown === null) {
-      set({ penaltyCountdown: 15 });
-    }
-  },
-
-  handleFocus: () => {
-    set({ penaltyCountdown: null });
-  },
-
-  setPenalized: () => {
-    set({ penalized: true, penaltyCountdown: null });
-  },
-
-  setPenaltyCountdown: (n: number | null) => {
-    set({ penaltyCountdown: n });
   },
 
   toggleMiniPlayer: () => {

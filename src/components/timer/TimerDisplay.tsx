@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTimerStore } from "../../stores/timerStore";
-import { Play, Pause, Square, Trash2, AlertCircle } from "lucide-react";
+import { Play, Pause, Square, Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
 
 export const TimerDisplay = () => {
@@ -8,8 +8,6 @@ export const TimerDisplay = () => {
     status,
     startTime,
     focusElapsedSeconds,
-    penaltyCountdown,
-    penalized,
     start,
     pause,
     resume,
@@ -56,15 +54,12 @@ export const TimerDisplay = () => {
   };
 
   const getStatusLabel = () => {
-    if (penalized) return "PENALIZED";
-    if (penaltyCountdown !== null) return "FOCUS LOST";
     if (status === "ACTIVE") return "FOCUSING";
     if (status === "PAUSED") return "PAUSED";
     return "READY";
   };
 
   const getStatusColorClass = () => {
-    if (penalized || penaltyCountdown !== null) return "text-danger";
     if (status === "ACTIVE") return "text-accent";
     if (status === "PAUSED") return "text-muted";
     return "text-muted";
@@ -85,16 +80,6 @@ export const TimerDisplay = () => {
         {formatTime(displaySeconds)}
       </div>
       
-      {/* Penalty Info */}
-      <div className="h-8">
-        {penaltyCountdown !== null && (
-          <div className="flex items-center text-danger animate-pulse" style={{ gap: 8 }}>
-            <AlertCircle size={16} />
-            <span className="text-sm uppercase tracking-wider">Penalty in {penaltyCountdown}s</span>
-          </div>
-        )}
-      </div>
-
       {/* Controls */}
       <div className="flex items-center" style={{ gap: 24, marginTop: 32 }}>
         {status === "IDLE" && (

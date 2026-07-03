@@ -37,7 +37,6 @@ export interface FocusSessionsTable {
   end_time: string;
   focus_duration_seconds: number;
   break_duration_seconds: Generated<number>;
-  penalized: Generated<number>;
   linked_goal_id: string | null;
   linked_project_id: Generated<string | null>;
   evidence_type: Generated<EvidenceType | null>;
